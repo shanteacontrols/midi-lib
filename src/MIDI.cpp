@@ -38,7 +38,7 @@
 
 //library modifed by Igor Petrovic - this library includes lufa usb midi support
 
-#ifdef NDEBUG
+#ifdef USBMIDI
 #include "MIDI.h"
 
 USB_ClassInfo_MIDI_Device_t MIDI_Interface;

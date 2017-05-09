@@ -40,7 +40,7 @@
 
 #pragma once
 
-#ifdef NDEBUG
+#ifdef USBMIDI
 
 #include "Config.h"
 #include "Descriptors.h"

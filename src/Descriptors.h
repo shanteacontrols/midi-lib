@@ -33,6 +33,7 @@
  *  Header file for Descriptors.c.
  */
 
+#ifdef USBMIDI
 #ifndef _DESCRIPTORS_H_
 #define _DESCRIPTORS_H_
 
@@ -105,4 +106,3 @@
 		                                    ATTR_WARN_UNUSED_RESULT ATTR_NON_NULL_PTR_ARG(3);
 
 #endif
-
