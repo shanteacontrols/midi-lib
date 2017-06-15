@@ -26,6 +26,4 @@ This library uses serial bject to communicate with UART interface. Object must s
 - write: Writes single byte to UART transmitter.
 - available: Checks if any data is available on UART receiver.
 
-To define serial object, use the following symbol (example for object named "uart"):
-
-- MIDI_SERIAL_OBJECT=uart
+Serial object must be called "uart".
