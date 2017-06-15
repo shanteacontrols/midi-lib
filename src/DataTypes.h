@@ -15,6 +15,8 @@
 
 #pragma once
 
+#ifdef USBMIDI
+
 #include "Helpers.h"
 
 enum midiInterfaceType_t
@@ -131,3 +133,5 @@ typedef struct
         return joined;
     }
 } encDec_14bit;
+
+#endif
