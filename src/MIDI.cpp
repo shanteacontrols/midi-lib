@@ -94,7 +94,7 @@ bool MIDI::init(midiInterfaceType_t type)
     switch(type)
     {
         case dinInterface:
-        USE_SERIAL_PORT.begin(31250);
+        MIDI_SERIAL_OBJECT.begin(31250);
         dinEnabled = true;
         return true;
         break;
@@ -144,20 +144,20 @@ void MIDI::send(midiMessageType_t inType, uint8_t inData1, uint8_t inData2, uint
                 {
                     //new message, memorize and send header
                     mRunningStatus_TX = status;
-                    USE_SERIAL_PORT.write(mRunningStatus_TX);
+                    MIDI_SERIAL_OBJECT.write(mRunningStatus_TX);
                 }
             }
             else
             {
                 //don't care about running status, send the status byte
-                USE_SERIAL_PORT.write(status);
+                MIDI_SERIAL_OBJECT.write(status);
             }
 
             //send data
-            USE_SERIAL_PORT.write(inData1);
+            MIDI_SERIAL_OBJECT.write(inData1);
 
             if ((inType != midiMessageProgramChange) && (inType != midiMessageAfterTouchChannel))
-                USE_SERIAL_PORT.write(inData2);
+                MIDI_SERIAL_OBJECT.write(inData2);
         }
 
         if (usbEnabled)
@@ -283,13 +283,13 @@ void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayCont
     if (dinEnabled)
     {
         if (!inArrayContainsBoundaries)
-            USE_SERIAL_PORT.write(0xf0);
+            MIDI_SERIAL_OBJECT.write(0xf0);
 
         for (uint16_t i=0; i<inLength; ++i)
-            USE_SERIAL_PORT.write(inArray[i]);
+            MIDI_SERIAL_OBJECT.write(inArray[i]);
 
         if (!inArrayContainsBoundaries)
-            USE_SERIAL_PORT.write(0xf7);
+            MIDI_SERIAL_OBJECT.write(0xf7);
 
         if (useRunningStatus)
             mRunningStatus_TX = midiMessageInvalidType;
@@ -572,8 +572,8 @@ void MIDI::sendTimeCodeQuarterFrame(uint8_t inData)
     //inData:   if you want to encode directly the nibbles in your program,
                 //you can send the byte here.
 
-    USE_SERIAL_PORT.write((uint8_t)midiMessageTimeCodeQuarterFrame);
-    USE_SERIAL_PORT.write(inData);
+    MIDI_SERIAL_OBJECT.write((uint8_t)midiMessageTimeCodeQuarterFrame);
+    MIDI_SERIAL_OBJECT.write(inData);
 
     if (useRunningStatus)
         mRunningStatus_TX = midiMessageInvalidType;
@@ -585,9 +585,9 @@ void MIDI::sendSongPosition(uint16_t inBeats)
 {
     //inBeats:  The number of beats since the start of the song
 
-    USE_SERIAL_PORT.write((uint8_t)midiMessageSongPosition);
-    USE_SERIAL_PORT.write(inBeats & 0x7f);
-    USE_SERIAL_PORT.write((inBeats >> 7) & 0x7f);
+    MIDI_SERIAL_OBJECT.write((uint8_t)midiMessageSongPosition);
+    MIDI_SERIAL_OBJECT.write(inBeats & 0x7f);
+    MIDI_SERIAL_OBJECT.write((inBeats >> 7) & 0x7f);
 
     if (useRunningStatus)
         mRunningStatus_TX = midiMessageInvalidType;
@@ -599,8 +599,8 @@ void MIDI::sendSongSelect(uint8_t inSongNumber)
 {
     //inSongNumber: Wanted song number
 
-    USE_SERIAL_PORT.write((uint8_t)midiMessageSongSelect);
-    USE_SERIAL_PORT.write(inSongNumber & 0x7f);
+    MIDI_SERIAL_OBJECT.write((uint8_t)midiMessageSongSelect);
+    MIDI_SERIAL_OBJECT.write(inSongNumber & 0x7f);
 
     if (useRunningStatus)
         mRunningStatus_TX = midiMessageInvalidType;
@@ -623,7 +623,7 @@ void MIDI::sendRealTime(midiMessageType_t inType)
         case midiMessageContinue:
         case midiMessageActiveSensing:
         case midiMessageSystemReset:
-        USE_SERIAL_PORT.write((uint8_t)inType);
+        MIDI_SERIAL_OBJECT.write((uint8_t)inType);
         MIDIevent_out = true;
         break;
 
@@ -700,10 +700,10 @@ bool MIDI::parse(midiInterfaceType_t type)
         //else, add the extracted byte to the pending message, and check validity
         //when the message is done, store it
 
-        if (USE_SERIAL_PORT.available() == 0)
+        if (MIDI_SERIAL_OBJECT.available() == 0)
             return false;   //no data available
 
-        const uint8_t extracted = USE_SERIAL_PORT.read();
+        const uint8_t extracted = MIDI_SERIAL_OBJECT.read();
 
         if (dinPendingMessageIndex == 0)
         {

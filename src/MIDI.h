@@ -42,7 +42,6 @@
 
 #ifdef USBMIDI
 
-#include "Config.h"
 #include "Descriptors.h"
 #include "DataTypes.h"
 #include "Helpers.h"
