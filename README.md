@@ -4,7 +4,13 @@ Supports USB MIDI via LUFA and MIDI over serial connection. Based on Arduino MID
 
 ## Symbols
 
-To use this library, two global symbols must be defined.
+To use this library, three global symbols must be defined.
+
+### USB MIDI
+
+To compile this library, the following symbol must be defined:
+
+- USBMIDI
 
 ### SysEx array size
 
