@@ -166,5 +166,4 @@ extern volatile bool MIDIevent_in;
 extern volatile bool MIDIevent_out;
 
 #endif
-#endif
 /// @}
