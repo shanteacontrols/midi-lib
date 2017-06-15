@@ -47,6 +47,12 @@
 #include "DataTypes.h"
 #include "Helpers.h"
 
+#define MIDI_CHANNEL_OMNI       0
+#define MIDI_CHANNEL_OFF        17 // and over
+
+#define MIDI_PITCHBEND_MIN      -8192
+#define MIDI_PITCHBEND_MAX      8191
+
 //usb
 void EVENT_USB_Device_ConfigurationChanged(void);
 
