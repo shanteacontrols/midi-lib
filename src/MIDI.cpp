@@ -94,7 +94,7 @@ bool MIDI::init(midiInterfaceType_t type)
     switch(type)
     {
         case dinInterface:
-        uart.begin(31250);
+        uart.init(31250);
         dinEnabled = true;
         return true;
         break;
@@ -700,7 +700,7 @@ bool MIDI::parse(midiInterfaceType_t type)
         //else, add the extracted byte to the pending message, and check validity
         //when the message is done, store it
 
-        if (uart.available() == 0)
+        if (uart.rxAvailable() == 0)
             return false;   //no data available
 
         const uint8_t extracted = uart.read();
