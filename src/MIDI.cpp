@@ -38,7 +38,7 @@
 
 //library modifed by Igor Petrovic - this library includes lufa usb midi support
 
-#ifdef USBMIDI
+#ifdef USE_USB_MIDI
 #include "MIDI.h"
 
 USB_ClassInfo_MIDI_Device_t MIDI_Interface;
@@ -207,7 +207,7 @@ void MIDI::sendNoteOff(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChann
     if (!inChannel)
         inChannel = noteChannel_;
 
-    if (noteOffMode == noteOffType_standardNoteOff)
+    if (noteOffMode == noteOffType_offChannel)
         send(midiMessageNoteOff, inNoteNumber, inVelocity, inChannel);
     else
         send(midiMessageNoteOn, inNoteNumber, inVelocity, inChannel);

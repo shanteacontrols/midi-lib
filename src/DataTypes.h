@@ -15,8 +15,6 @@
 
 #pragma once
 
-#ifdef USBMIDI
-
 #include "Helpers.h"
 
 enum midiInterfaceType_t
@@ -78,7 +76,7 @@ enum midiFilterMode_t
 typedef enum
 {
     noteOffType_noteOnZeroVel,
-    noteOffType_standardNoteOff
+    noteOffType_offChannel
 } noteOffType_t;
 
 //decoded data of a MIDI message
@@ -133,5 +131,3 @@ typedef struct
         return joined;
     }
 } encDec_14bit;
-
-#endif

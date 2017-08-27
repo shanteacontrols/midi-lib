@@ -35,7 +35,7 @@
  *  the device's capabilities and functions.
  */
 
-#ifdef USBMIDI
+#ifdef USE_USB_MIDI
 #include "Descriptors.h"
 
 /** Device descriptor structure. This descriptor, located in FLASH memory, describes the overall
