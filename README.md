@@ -27,3 +27,7 @@ This library uses serial bject to communicate with UART interface. Object must s
 - `available`: Checks if any data is available on UART receiver.
 
 Serial object must be called `uart`.
+
+## Licencing
+
+This project is based on Arduino MIDI library and LUFA framework which are licenced under MIT. Whole project is also licenced under MIT.
