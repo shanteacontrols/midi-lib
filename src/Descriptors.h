@@ -33,7 +33,7 @@
  *  Header file for Descriptors.c.
  */
 
-#ifdef USE_USB_MIDI
+#ifdef USBMIDI
 #ifndef _DESCRIPTORS_H_
 #define _DESCRIPTORS_H_
 

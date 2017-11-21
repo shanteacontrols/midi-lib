@@ -1,17 +1,28 @@
 /*
+    Copyright 2016 Francois Best
+    Copyright 2017 Igor Petroviæ
 
-Copyright 2016 Francois Best
-Copyright 2017 Igor PetroviÄ‡
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files (the "Software"),
+    to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+    sell copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+    THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #pragma once
+
+#ifdef USBMIDI
 
 #include "Helpers.h"
 
@@ -74,7 +85,7 @@ enum midiFilterMode_t
 typedef enum
 {
     noteOffType_noteOnZeroVel,
-    noteOffType_offChannel
+    noteOffType_standardNoteOff
 } noteOffType_t;
 
 //decoded data of a MIDI message
@@ -110,7 +121,7 @@ typedef struct
         uint8_t newHigh = (value >> 8) & 0xFF;
         uint8_t newLow = value & 0xFF;
         newHigh = (newHigh << 1) & 0x7F;
-        bitWrite(newHigh, 0, bitRead(newLow, 7));
+        BIT_WRITE(newHigh, 0, BIT_READ(newLow, 7));
         newLow = lowByte_7bit(newLow);
         high = newHigh;
         low = newLow;
@@ -118,7 +129,7 @@ typedef struct
 
     uint16_t decode14bit()
     {
-        bitWrite(low, 7, bitRead(high, 0));
+        BIT_WRITE(low, 7, BIT_READ(high, 0));
         high >>= 1;
 
         uint16_t joined;
@@ -129,3 +140,5 @@ typedef struct
         return joined;
     }
 } encDec_14bit;
+
+#endif
