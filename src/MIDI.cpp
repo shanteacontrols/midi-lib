@@ -1,17 +1,26 @@
 /*
+    Copyright 2016 Francois Best
+    Copyright 2017 Igor Petroviæ
 
-Copyright 2016 Francois Best
-Copyright 2017 Igor PetroviÄ‡
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files (the "Software"),
+    to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+    sell copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+    THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifdef USE_USB_MIDI
+#ifdef USBMIDI
 #include "MIDI.h"
 
 USB_ClassInfo_MIDI_Device_t MIDI_Interface;
@@ -60,6 +69,9 @@ MIDI::MIDI()
     ccChannel_              = 1;
     programChangeChannel_   = 1;
     aftertouchChannel_      = 1;
+
+    sendUARTwriteCallback   = NULL;
+    sendUARTreadCallback    = NULL;
 }
 
 bool MIDI::init(midiInterfaceType_t type)
@@ -67,7 +79,6 @@ bool MIDI::init(midiInterfaceType_t type)
     switch(type)
     {
         case dinInterface:
-        uart.init(31250);
         dinEnabled = true;
         return true;
         break;
@@ -117,20 +128,20 @@ void MIDI::send(midiMessageType_t inType, uint8_t inData1, uint8_t inData2, uint
                 {
                     //new message, memorize and send header
                     mRunningStatus_TX = status;
-                    uart.write(mRunningStatus_TX);
+                    sendUARTwriteCallback(mRunningStatus_TX);
                 }
             }
             else
             {
                 //don't care about running status, send the status byte
-                uart.write(status);
+                sendUARTwriteCallback(status);
             }
 
             //send data
-            uart.write(inData1);
+            sendUARTwriteCallback(inData1);
 
             if ((inType != midiMessageProgramChange) && (inType != midiMessageAfterTouchChannel))
-                uart.write(inData2);
+                sendUARTwriteCallback(inData2);
         }
 
         if (usbEnabled)
@@ -180,7 +191,7 @@ void MIDI::sendNoteOff(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChann
     if (!inChannel)
         inChannel = noteChannel_;
 
-    if (noteOffMode == noteOffType_offChannel)
+    if (noteOffMode == noteOffType_standardNoteOff)
         send(midiMessageNoteOff, inNoteNumber, inVelocity, inChannel);
     else
         send(midiMessageNoteOn, inNoteNumber, inVelocity, inChannel);
@@ -256,13 +267,13 @@ void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayCont
     if (dinEnabled)
     {
         if (!inArrayContainsBoundaries)
-            uart.write(0xf0);
+            sendUARTwriteCallback(0xf0);
 
         for (uint16_t i=0; i<inLength; ++i)
-            uart.write(inArray[i]);
+            sendUARTwriteCallback(inArray[i]);
 
         if (!inArrayContainsBoundaries)
-            uart.write(0xf7);
+            sendUARTwriteCallback(0xf7);
 
         if (useRunningStatus)
             mRunningStatus_TX = midiMessageInvalidType;
@@ -545,8 +556,8 @@ void MIDI::sendTimeCodeQuarterFrame(uint8_t inData)
     //inData:   if you want to encode directly the nibbles in your program,
                 //you can send the byte here.
 
-    uart.write((uint8_t)midiMessageTimeCodeQuarterFrame);
-    uart.write(inData);
+    sendUARTwriteCallback((uint8_t)midiMessageTimeCodeQuarterFrame);
+    sendUARTwriteCallback(inData);
 
     if (useRunningStatus)
         mRunningStatus_TX = midiMessageInvalidType;
@@ -558,9 +569,9 @@ void MIDI::sendSongPosition(uint16_t inBeats)
 {
     //inBeats:  The number of beats since the start of the song
 
-    uart.write((uint8_t)midiMessageSongPosition);
-    uart.write(inBeats & 0x7f);
-    uart.write((inBeats >> 7) & 0x7f);
+    sendUARTwriteCallback((uint8_t)midiMessageSongPosition);
+    sendUARTwriteCallback(inBeats & 0x7f);
+    sendUARTwriteCallback((inBeats >> 7) & 0x7f);
 
     if (useRunningStatus)
         mRunningStatus_TX = midiMessageInvalidType;
@@ -572,8 +583,8 @@ void MIDI::sendSongSelect(uint8_t inSongNumber)
 {
     //inSongNumber: Wanted song number
 
-    uart.write((uint8_t)midiMessageSongSelect);
-    uart.write(inSongNumber & 0x7f);
+    sendUARTwriteCallback((uint8_t)midiMessageSongSelect);
+    sendUARTwriteCallback(inSongNumber & 0x7f);
 
     if (useRunningStatus)
         mRunningStatus_TX = midiMessageInvalidType;
@@ -596,7 +607,7 @@ void MIDI::sendRealTime(midiMessageType_t inType)
         case midiMessageContinue:
         case midiMessageActiveSensing:
         case midiMessageSystemReset:
-        uart.write((uint8_t)inType);
+        sendUARTwriteCallback((uint8_t)inType);
         MIDIevent_out = true;
         break;
 
@@ -673,10 +684,15 @@ bool MIDI::parse(midiInterfaceType_t type)
         //else, add the extracted byte to the pending message, and check validity
         //when the message is done, store it
 
-        if (uart.rxAvailable() == 0)
+        if (sendUARTreadCallback == NULL)
+            return false;
+
+        int16_t data = sendUARTreadCallback();
+
+        if (data == -1)
             return false;   //no data available
 
-        const uint8_t extracted = uart.read();
+        const uint8_t extracted = data;
 
         if (dinPendingMessageIndex == 0)
         {
@@ -1472,6 +1488,16 @@ void MIDI::disableUSB()
 void MIDI::disableDIN()
 {
     dinEnabled = false;
+}
+
+void MIDI::handleUARTread(int16_t(*fptr)())
+{
+    sendUARTreadCallback = fptr;
+}
+
+void MIDI::handleUARTwrite(int8_t(*fptr)(uint8_t data))
+{
+    sendUARTwriteCallback = fptr;
 }
 
 /** Event handler for the USB_ConfigurationChanged event. This is fired when the host set the current configuration
