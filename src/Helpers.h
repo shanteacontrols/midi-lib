@@ -1,6 +1,6 @@
 /*
     Copyright 2016 Francois Best
-    Copyright 2017 Igor Petroviæ
+    Copyright 2017 Igor Petrovic
 
     Permission is hereby granted, free of charge, to any person obtaining
     a copy of this software and associated documentation files (the "Software"),
@@ -22,7 +22,29 @@
 
 #pragma once
 
-#define normalizeChannel(channel)   (((channel - 1) & MAX_MIDI_CHANNEL_MASK))
-#define normalizeData(data)         (data & MAX_MIDI_VALUE_MASK)
-#define lowByte_7bit(value)         ((value) & 0x7F)
-#define highByte_7bit(value)        ((value >> 7) & 0x7f)
+#include <stddef.h>
+#include <inttypes.h>
+
+///
+/// \brief Extracts lower 7 bits from 14-bit value.
+/// \param [in] value   14-bit value.
+/// \returns    Lower 7 bits.
+///
+#define lowByte_7bit(value)             ((value) & 0x7F)
+
+///
+/// \brief Extracts upper 7 bits from 14-bit value.
+/// \param [in] value   14-bit value.
+/// \returns    Upper 7 bits.
+///
+#define highByte_7bit(value)            ((value >> 7) & 0x7f)
+
+///
+/// \brief Constructs a USB MIDI event ID from a given MIDI command and a virtual MIDI cable index.
+///
+/// This can then be used to create and decode MIDI event packets.
+/// \param [in] virtualcable    Index of the virtual MIDI cable the event relates to.
+/// \param [in] command         MIDI command to send through the virtual MIDI cable.
+/// \returns    Constructed USB MIDI event ID.
+///
+#define GET_USB_MIDI_EVENT(virtualcable, command)  (((virtualcable) << 4) | ((command) >> 4))

@@ -1,6 +1,6 @@
 /*
     Copyright 2016 Francois Best
-    Copyright 2017 Igor Petroviæ
+    Copyright 2017 Igor Petrovic
 
     Permission is hereby granted, free of charge, to any person obtaining
     a copy of this software and associated documentation files (the "Software"),
@@ -20,45 +20,63 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#pragma once
+#ifndef __MIDI_LIB___
+#define __MIDI_LIB___
 
-#ifdef USBMIDI
-
-#include "Descriptors.h"
 #include "DataTypes.h"
 #include "Helpers.h"
 
+///
+/// \brief Value used to listen incoming MIDI messages on all channels.
+///
 #define MIDI_CHANNEL_OMNI       0
-#define MIDI_CHANNEL_OFF        17 // and over
+
+///
+/// \brief Value used to turn the listening of incoming MIDI messages off.
+///
+#define MIDI_CHANNEL_OFF        17
+
+///
+/// \brief Values defining MIDI Pitch Bend range.
+/// @{
+///
 
 #define MIDI_PITCHBEND_MIN      -8192
 #define MIDI_PITCHBEND_MAX      8191
 
-//usb
-void EVENT_USB_Device_ConfigurationChanged(void);
+/// @}
 
 ///
-/// \brief UART and USB MIDI communication.
-/// \ingroup midi
+/// \brief MIDI library main class.
 /// @{
 ///
+
 class MIDI
 {
     public:
     MIDI();
-    bool init(midiInterfaceType_t type);
+
     void handleUARTread(int16_t(*fptr)());
     void handleUARTwrite(int8_t(*fptr)(uint8_t data));
 
+    void handleUSBread(bool(*fptr)(USBMIDIpacket_t& USBMIDIpacket));
+    void handleUSBwrite(bool(*fptr)(USBMIDIpacket_t& USBMIDIpacket));
+
+    void setUSBMIDIstate(bool state);
+    bool getUSBMIDIstate();
+
+    void setDINMIDIstate(bool state);
+    bool getDINMIDIstate();
+
     //MIDI output
     public:
-    void sendNoteOn(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel = 0);
-    void sendNoteOff(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel = 0);
-    void sendProgramChange(uint8_t inProgramNumber, uint8_t inChannel = 0);
-    void sendControlChange(uint8_t inControlNumber, uint8_t inControlValue, uint8_t inChannel = 0);
+    void sendNoteOn(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel);
+    void sendNoteOff(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel);
+    void sendProgramChange(uint8_t inProgramNumber, uint8_t inChannel);
+    void sendControlChange(uint8_t inControlNumber, uint8_t inControlValue, uint8_t inChannel);
     void sendPitchBend(int16_t inPitchValue, uint8_t inChannel);
-    void sendPolyPressure(uint8_t inNoteNumber, uint8_t inPressure, uint8_t inChannel = 0);
-    void sendAfterTouch(uint8_t inPressure, uint8_t inChannel = 0);
+    void sendAfterTouch(uint8_t inPressure, uint8_t inChannel, uint8_t inNoteNumber);
+    void sendAfterTouch(uint8_t inPressure, uint8_t inChannel);
     void sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayContainsBoundaries);
     void sendTimeCodeQuarterFrame(uint8_t inTypeNibble, uint8_t inValuesNibble);
     void sendTimeCodeQuarterFrame(uint8_t inData);
@@ -67,18 +85,9 @@ class MIDI
     void sendTuneRequest();
     void sendRealTime(midiMessageType_t inType);
     void setNoteOffMode(noteOffType_t type);
-    void enableRunningStatus();
-    void disableRunningStatus();
-    bool runningStatusEnabled();
 
-    void enableUSB();
-    void enableDIN();
-    void disableUSB();
-    void disableDIN();
-
-    void setNoteChannel(uint8_t channel);
-    void setCCchannel(uint8_t channel);
-    void setProgramChangeChannel(uint8_t channel);
+    void setRunningStatusState(bool state);
+    bool getRunningStatusState();
 
     noteOffType_t getNoteOffMode();
 
@@ -88,34 +97,25 @@ class MIDI
     //MIDI input
 
     public:
-    bool read(midiInterfaceType_t type);
+    bool read(midiInterfaceType_t type, midiFilterMode_t filterMode = THRU_OFF);
     midiMessageType_t getType(midiInterfaceType_t type) const;
     uint8_t  getChannel(midiInterfaceType_t type) const;
     uint8_t getData1(midiInterfaceType_t type) const;
     uint8_t getData2(midiInterfaceType_t type) const;
     uint8_t* getSysExArray(midiInterfaceType_t type);
     uint16_t getSysExArrayLength(midiInterfaceType_t type);
-    bool check() const;
     uint8_t getInputChannel() const;
     void setInputChannel(uint8_t inChannel);
     midiMessageType_t getTypeFromStatusByte(uint8_t inStatus);
     uint8_t getChannelFromStatusByte(uint8_t inStatus);
     bool isChannelMessage(midiMessageType_t inType);
-
-    private:
-    bool read(uint8_t inChannel, midiInterfaceType_t type);
-    bool addSysExArrayByte(midiInterfaceType_t type);
+    void setOneByteParseDINstate(bool state);
+    bool getOneByteParseDINstate();
 
     public:
-    midiFilterMode_t getFilterMode() const;
-    bool getThruState() const;
-
-    void turnThruOn(midiFilterMode_t inThruFilterMode = Full);
-    void turnThruOff();
-    void setThruFilterMode(midiFilterMode_t inThruFilterMode);
 
     private:
-    void thruFilter(uint8_t inChannel);
+    void thruFilter(uint8_t inChannel, midiInterfaceType_t type, midiFilterMode_t filterMode);
     bool parse(midiInterfaceType_t type);
     bool inputFilter(uint8_t inChannel, midiInterfaceType_t type);
     void resetInput();
@@ -124,33 +124,30 @@ class MIDI
     int16_t             (*sendUARTreadCallback)();
     int8_t              (*sendUARTwriteCallback)(uint8_t data);
 
+    bool                (*sendUSBreadCallback)(USBMIDIpacket_t& USBMIDIpacket);
+    bool                (*sendUSBwriteCallback)(USBMIDIpacket_t& USBMIDIpacket);
+
     bool                usbEnabled,
                         dinEnabled;
 
-    bool                mThruActivated;
-    midiFilterMode_t    mThruFilterMode;
     bool                useRunningStatus;
     bool                use1byteParsing;
 
-    uint8_t             mRunningStatus_RX;
-    uint8_t             mRunningStatus_TX;
+    uint8_t             mRunningStatus_RX,
+                        mRunningStatus_TX;
+
     uint8_t             mInputChannel;
     uint8_t             mPendingMessage[3];
     uint16_t            dinPendingMessageExpectedLenght;
     uint16_t            dinPendingMessageIndex;
     uint16_t            sysExArrayLength;
-    Message             dinMessage,
+
+    MIDImessage_t       dinMessage,
                         usbMessage;
+
     noteOffType_t       noteOffMode;
-    uint8_t             noteChannel_,
-                        ccChannel_,
-                        programChangeChannel_,
-                        aftertouchChannel_;
 };
 
-extern MIDI midi;
-extern volatile bool MIDIevent_in;
-extern volatile bool MIDIevent_out;
-
 #endif
+
 /// @}
