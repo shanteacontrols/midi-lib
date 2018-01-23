@@ -138,7 +138,7 @@ typedef struct
     uint8_t low;
     uint16_t value;
 
-    void encodeTo14bit()
+    void split14bit()
     {
         uint8_t newHigh = (value >> 8) & 0xFF;
         uint8_t newLow = value & 0xFF;
@@ -158,7 +158,7 @@ typedef struct
         low = newLow;
     }
 
-    uint16_t decode14bit()
+    void mergeTo14bit()
     {
         if (high & 0x01)
         {
@@ -176,6 +176,6 @@ typedef struct
         joined <<= 8;
         joined |= low;
 
-        return joined;
+        value = joined;
     }
 } encDec_14bit_t;
