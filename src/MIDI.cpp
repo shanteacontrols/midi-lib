@@ -530,7 +530,25 @@ void MIDI::sendRealTime(midiMessageType_t inType)
         case midiMessageContinue:
         case midiMessageActiveSensing:
         case midiMessageSystemReset:
-        sendUARTwriteCallback((uint8_t)inType);
+        if (dinEnabled)
+            sendUARTwriteCallback((uint8_t)inType);
+
+        if (usbEnabled)
+        {
+            //midiMessageSystemExclusive = 0xF0, which is what we need for USB MIDI single-byte
+            uint8_t midiEvent = (uint8_t)midiMessageSystemExclusive;
+
+            USBMIDIpacket_t MIDIEvent = (USBMIDIpacket_t)
+            {
+                .Event  = midiEvent,
+
+                .Data1  = inType,
+                .Data2  = 0x00,
+                .Data3  = 0x00,
+            };
+
+            sendUSBwriteCallback(MIDIEvent);
+        }
         break;
 
         default:
