@@ -47,6 +47,16 @@
 /// @}
 
 ///
+/// \brief Maximum 7-bit MIDI value.
+///
+#define MIDI_7_BIT_VALUE_MAX    127
+
+///
+/// \brief Maximum 14-bit MIDI value.
+///
+#define MIDI_14_BIT_VALUE_MAX   16383
+
+///
 /// \brief MIDI library main class.
 /// @{
 ///
