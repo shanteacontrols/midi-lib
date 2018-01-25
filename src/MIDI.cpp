@@ -535,12 +535,9 @@ void MIDI::sendRealTime(midiMessageType_t inType)
 
         if (usbEnabled)
         {
-            //midiMessageSystemExclusive = 0xF0, which is what we need for USB MIDI single-byte
-            uint8_t midiEvent = (uint8_t)midiMessageSystemExclusive;
-
             USBMIDIpacket_t MIDIEvent = (USBMIDIpacket_t)
             {
-                .Event  = midiEvent,
+                .Event  = (uint8_t)midiMessageSystemExclusive >> 4,
 
                 .Data1  = inType,
                 .Data2  = 0x00,
