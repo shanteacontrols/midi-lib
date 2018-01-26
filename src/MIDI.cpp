@@ -24,6 +24,32 @@
 
 #ifdef __MIDI_LIB___
 
+bool                usbEnabled,
+                    dinEnabled;
+
+bool                useRunningStatus;
+bool                use1byteParsing;
+
+uint8_t             mRunningStatus_RX,
+                    mRunningStatus_TX;
+
+uint8_t             mInputChannel;
+uint8_t             mPendingMessage[3];
+uint16_t            dinPendingMessageExpectedLenght;
+uint16_t            dinPendingMessageIndex;
+uint16_t            sysExArrayLength;
+
+MIDImessage_t       dinMessage,
+                    usbMessage;
+
+noteOffType_t       noteOffMode;
+
+int16_t             (*sendUARTreadCallback)();
+int8_t              (*sendUARTwriteCallback)(uint8_t data);
+
+bool                (*sendUSBreadCallback)(USBMIDIpacket_t& USBMIDIpacket);
+bool                (*sendUSBwriteCallback)(USBMIDIpacket_t& USBMIDIpacket);
+
 ///
 /// \brief Default constructor.
 ///
@@ -580,7 +606,7 @@ bool MIDI::getRunningStatusState()
 /// \param inChannel [in]   MIDI channel.
 /// \returns Calculated status byte.
 ///
-uint8_t MIDI::getStatus(midiMessageType_t inType, uint8_t inChannel) const
+uint8_t MIDI::getStatus(midiMessageType_t inType, uint8_t inChannel)
 {
     return ((uint8_t)inType | ((inChannel - 1) & 0x0f));
 }
@@ -1090,7 +1116,7 @@ void MIDI::resetInput()
 /// \param type [in]    MIDI interface which is being checked.
 /// \returns MIDI message type of the last received message.
 ///
-midiMessageType_t MIDI::getType(midiInterfaceType_t type) const
+midiMessageType_t MIDI::getType(midiInterfaceType_t type)
 {
     //get the last received message's type
     switch(type)
@@ -1112,7 +1138,7 @@ midiMessageType_t MIDI::getType(midiInterfaceType_t type) const
 /// \param type [in]    MIDI interface which is being checked.
 /// \returns MIDI channel of the last received message. For non-channel messages, this will return 0.
 ///
-uint8_t MIDI::getChannel(midiInterfaceType_t type) const
+uint8_t MIDI::getChannel(midiInterfaceType_t type)
 {
     switch(type)
     {
@@ -1133,7 +1159,7 @@ uint8_t MIDI::getChannel(midiInterfaceType_t type) const
 /// \param type [in]    MIDI interface which is being checked.
 /// \returns First data byte of the last received message.
 ///
-uint8_t MIDI::getData1(midiInterfaceType_t type) const
+uint8_t MIDI::getData1(midiInterfaceType_t type)
 {
     switch(type)
     {
@@ -1155,7 +1181,7 @@ uint8_t MIDI::getData1(midiInterfaceType_t type) const
 /// \param type [in]    MIDI interface which is being checked.
 /// \returns Second data byte of the last received message.
 ///
-uint8_t MIDI::getData2(midiInterfaceType_t type) const
+uint8_t MIDI::getData2(midiInterfaceType_t type)
 {
     switch(type)
     {
@@ -1221,7 +1247,7 @@ uint16_t MIDI::getSysExArrayLength(midiInterfaceType_t type)
 /// \returns MIDI channel value (1-16).
 ///          Two additional values can be returned (MIDI_CHANNEL_OMNI and MIDI_CHANNEL_OFF).
 ///
-uint8_t MIDI::getInputChannel() const
+uint8_t MIDI::getInputChannel()
 {
     return mInputChannel;
 }
