@@ -1525,6 +1525,32 @@ bool MIDI::getDINMIDIstate()
 }
 
 ///
+/// \brief Calculates octave from received MIDI note.
+/// @param [in] note    Raw MIDI note (0-127).
+/// \returns Calculated octave (0 - MIDI_NOTES-1).
+///
+uint8_t MIDI::getOctaveFromNote(int8_t note)
+{
+    //sanitize input
+    note &= 0x7F;
+
+    return note / MIDI_NOTES;
+}
+
+///
+/// \brief Calculates tonic (root note) from received raw MIDI note.
+/// @param [in] note    Raw MIDI note (0-127).
+/// \returns Calculated tonic/root note (enumerated type). See note_t enumeration.
+///
+note_t MIDI::getTonicFromNote(int8_t note)
+{
+    //sanitize input
+    note &= 0x7F;
+
+    return (note_t)(note % MIDI_NOTES);
+}
+
+///
 /// \brief Used to configure function which reads data from UART.
 ///
 /// Value -1 must be returned if there is nothing to be read from UART.

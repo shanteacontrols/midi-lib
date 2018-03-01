@@ -101,6 +101,9 @@ class MIDI
 
     static noteOffType_t getNoteOffMode();
 
+    static uint8_t getOctaveFromNote(int8_t note);
+    static note_t getTonicFromNote(int8_t note);
+
     private:
     static void send(midiMessageType_t inType, uint8_t inData1, uint8_t inData2, uint8_t inChannel);
 

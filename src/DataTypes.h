@@ -103,6 +103,26 @@ typedef enum
 } noteOffType_t;
 
 ///
+/// \brief List off all possible MIDI notes.
+///
+typedef enum
+{
+    C,
+    C_SHARP,
+    D,
+    D_SHARP,
+    E,
+    F,
+    F_SHARP,
+    G,
+    G_SHARP,
+    A,
+    A_SHARP,
+    B,
+    MIDI_NOTES
+} note_t;
+
+///
 /// \brief Holds decoded data of a MIDI message.
 ///
 typedef struct
