@@ -1365,15 +1365,18 @@ void MIDI::thruFilter(uint8_t inChannel, midiInterfaceType_t type, midiFilterMod
     switch(filterMode)
     {
         case THRU_FULL_DIN:
-        case THRU_SAME_CHANNEL_DIN:
-        case THRU_DIFF_CHANNEL_DIN:
+        case THRU_CHANNEL_DIN:
         setUSBMIDIstate(false);
         break;
 
         case THRU_FULL_USB:
-        case THRU_SAME_CHANNEL_USB:
-        case THRU_DIFF_CHANNEL_USB:
+        case THRU_CHANNEL_USB:
         setDINMIDIstate(false);
+        break;
+
+        case THRU_FULL_ALL:
+        case THRU_CHANNEL_ALL:
+        //leave as is
         break;
 
         default:
@@ -1390,36 +1393,15 @@ void MIDI::thruFilter(uint8_t inChannel, midiInterfaceType_t type, midiFilterMod
         switch (filterMode)
         {
             case THRU_FULL_DIN:
-            send((*msg).type, (*msg).data1, (*msg).data2, (*msg).channel);
-            break;
-
             case THRU_FULL_USB:
+            case THRU_FULL_ALL:
             send((*msg).type, (*msg).data1, (*msg).data2, (*msg).channel);
             break;
 
-            case THRU_SAME_CHANNEL_DIN:
+            case THRU_CHANNEL_DIN:
+            case THRU_CHANNEL_USB:
+            case THRU_CHANNEL_ALL:
             if (filter_condition)
-            {
-                send((*msg).type, (*msg).data1, (*msg).data2, (*msg).channel);
-            }
-            break;
-
-            case THRU_SAME_CHANNEL_USB:
-            if (filter_condition)
-            {
-                send((*msg).type, (*msg).data1, (*msg).data2, (*msg).channel);
-            }
-            break;
-
-            case THRU_DIFF_CHANNEL_DIN:
-            if (!filter_condition)
-            {
-                send((*msg).type, (*msg).data1, (*msg).data2, (*msg).channel);
-            }
-            break;
-
-            case THRU_DIFF_CHANNEL_USB:
-            if (!filter_condition)
             {
                 send((*msg).type, (*msg).data1, (*msg).data2, (*msg).channel);
             }
