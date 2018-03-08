@@ -22,8 +22,6 @@
 
 #include "MIDI.h"
 
-#ifdef __MIDI_LIB___
-
 bool                usbEnabled,
                     dinEnabled;
 
@@ -50,6 +48,8 @@ int8_t              (*sendUARTwriteCallback)(uint8_t data);
 bool                (*sendUSBreadCallback)(USBMIDIpacket_t& USBMIDIpacket);
 bool                (*sendUSBwriteCallback)(USBMIDIpacket_t& USBMIDIpacket);
 
+uint8_t             zeroStartChannel;
+
 ///
 /// \brief Default constructor.
 ///
@@ -72,8 +72,23 @@ MIDI::MIDI()
 ///
 void MIDI::send(midiMessageType_t inType, uint8_t inData1, uint8_t inData2, uint8_t inChannel)
 {
+    bool validCheck = true;
+
     //test if channel is valid
-    if (inChannel >= MIDI_CHANNEL_OFF || inChannel == MIDI_CHANNEL_OMNI || inType < 0x80)
+    if (zeroStartChannel)
+    {
+        if (inChannel >= 16)
+            validCheck = false;
+        else
+            inChannel--; //normalize channel
+    }
+    else
+    {
+        if ((inChannel > 16) || !inChannel)
+            validCheck = false;
+    }
+
+    if (!validCheck || (inType < 0x80))
     {
         if (useRunningStatus && dinEnabled)
             mRunningStatus_TX = midiMessageInvalidType;
@@ -623,7 +638,7 @@ uint8_t MIDI::getStatus(midiMessageType_t inType, uint8_t inChannel)
 ///
 bool MIDI::read(midiInterfaceType_t type, midiFilterMode_t filterMode)
 {
-    if (mInputChannel >= MIDI_CHANNEL_OFF)
+    if (mInputChannel == MIDI_CHANNEL_OFF)
         return false; //MIDI Input disabled
 
     switch(type)
@@ -1143,11 +1158,11 @@ uint8_t MIDI::getChannel(midiInterfaceType_t type)
     switch(type)
     {
         case dinInterface:
-        return dinMessage.channel;
+        return dinMessage.channel - zeroStartChannel;
         break;
 
         case usbInterface:
-        return usbMessage.channel;
+        return usbMessage.channel - zeroStartChannel;
         break;
     }
 
@@ -1244,23 +1259,59 @@ uint16_t MIDI::getSysExArrayLength(midiInterfaceType_t type)
 
 ///
 /// \brief Checks MIDI channel on which incoming messages are being listened.
-/// \returns MIDI channel value (1-16).
+/// \returns MIDI channel value (1-16) if zeroStartChannel is disabled, 0-15 otherwise.
 ///          Two additional values can be returned (MIDI_CHANNEL_OMNI and MIDI_CHANNEL_OFF).
 ///
 uint8_t MIDI::getInputChannel()
 {
-    return mInputChannel;
+    if ((mInputChannel == MIDI_CHANNEL_OMNI) || (mInputChannel == MIDI_CHANNEL_OFF))
+    {
+        return mInputChannel;
+    }
+    else
+    {
+        return mInputChannel - zeroStartChannel;
+    }
 }
 
 ///
 /// \brief Configures MIDI channel on which incoming messages are being listened.
-/// \param inChannel [in]   The channel value. Valid values are 1 to 16.
+/// \param inChannel [in]   The channel value. Valid values are 1 to 16 if zeroStartChannel
+///                         is set to false, otherwise valid values are 0-15. Two additional values
+///                         can be passed:
 ///                         MIDI_CHANNEL_OMNI value is used to listen on all channels (default).
 ///                         MIDI_CHANNEL_OFF value is used to disable input.
+/// \returns                True if passed channel is valid.
 ///
-void MIDI::setInputChannel(uint8_t inChannel)
+bool MIDI::setInputChannel(uint8_t inChannel)
 {
-    mInputChannel = inChannel;
+    bool valid = false;
+
+    if ((inChannel == MIDI_CHANNEL_OMNI) || (inChannel == MIDI_CHANNEL_OFF))
+    {
+        valid = true;
+    }
+    else
+    {
+        if (zeroStartChannel)
+        {
+            if (mInputChannel >= 16)
+                valid = false;
+        }
+        else
+        {
+            if (!mInputChannel || (mInputChannel > 16))
+                valid = false;
+        }
+    }
+
+    if (valid)
+    {
+        mInputChannel = inChannel;
+        return true;
+    }
+
+    return false;
 }
 
 ///
@@ -1298,7 +1349,7 @@ midiMessageType_t MIDI::getTypeFromStatusByte(uint8_t inStatus)
 ///
 uint8_t MIDI::getChannelFromStatusByte(uint8_t inStatus)
 {
-    return (inStatus & 0x0f) + 1;
+    return (inStatus & 0x0f) + 1 - zeroStartChannel;
 }
 
 ///
@@ -1533,6 +1584,20 @@ note_t MIDI::getTonicFromNote(int8_t note)
 }
 
 ///
+/// \brief Configures the way channels are calculated internally when sending MIDI messages.
+/// @param state [in]   When set to true, all channels passed to library
+///                     need to start from zero (channel 1 is 0, channel 16 is 15).
+///                     Otherwise, MIDI channels need to be passed as they are
+///                     (channel 1 is 1, channel 16 is 16).
+///                     This is used only when sending MIDI messages. When requesting MIDI
+///                     channel, normal 1-16 values are used.
+///
+void MIDI::setChannelSendZeroStart(bool state)
+{
+    zeroStartChannel = state ? 1 : 0;
+}
+
+///
 /// \brief Used to configure function which reads data from UART.
 ///
 /// Value -1 must be returned if there is nothing to be read from UART.
@@ -1579,5 +1644,3 @@ void MIDI::handleUSBwrite(bool(*fptr)(USBMIDIpacket_t& USBMIDIpacket))
 {
     sendUSBwriteCallback = fptr;
 }
-
-#endif

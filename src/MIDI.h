@@ -20,8 +20,7 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef __MIDI_LIB___
-#define __MIDI_LIB___
+#pragma once
 
 #include "DataTypes.h"
 #include "Helpers.h"
@@ -29,12 +28,12 @@
 ///
 /// \brief Value used to listen incoming MIDI messages on all channels.
 ///
-#define MIDI_CHANNEL_OMNI       0
+#define MIDI_CHANNEL_OMNI       17
 
 ///
 /// \brief Value used to turn the listening of incoming MIDI messages off.
 ///
-#define MIDI_CHANNEL_OFF        17
+#define MIDI_CHANNEL_OFF        18
 
 ///
 /// \brief Values defining MIDI Pitch Bend range.
@@ -78,6 +77,8 @@ class MIDI
     static void setDINMIDIstate(bool state);
     static bool getDINMIDIstate();
 
+    static void setChannelSendZeroStart(bool state);
+
     //MIDI output
     public:
     static void sendNoteOn(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel);
@@ -110,15 +111,15 @@ class MIDI
     //MIDI input
 
     public:
-    bool read(midiInterfaceType_t type, midiFilterMode_t filterMode = THRU_OFF);
+    static bool read(midiInterfaceType_t type, midiFilterMode_t filterMode = THRU_OFF);
     static midiMessageType_t getType(midiInterfaceType_t type);
-    static uint8_t  getChannel(midiInterfaceType_t type);
+    static uint8_t getChannel(midiInterfaceType_t type);
     static uint8_t getData1(midiInterfaceType_t type);
     static uint8_t getData2(midiInterfaceType_t type);
     static uint8_t* getSysExArray(midiInterfaceType_t type);
     static uint16_t getSysExArrayLength(midiInterfaceType_t type);
     static uint8_t getInputChannel();
-    static void setInputChannel(uint8_t inChannel);
+    static bool setInputChannel(uint8_t inChannel);
     static midiMessageType_t getTypeFromStatusByte(uint8_t inStatus);
     static uint8_t getChannelFromStatusByte(uint8_t inStatus);
     static bool isChannelMessage(midiMessageType_t inType);
@@ -132,7 +133,5 @@ class MIDI
     static void resetInput();
     static uint8_t getStatus(midiMessageType_t inType, uint8_t inChannel);
 };
-
-#endif
 
 /// @}
