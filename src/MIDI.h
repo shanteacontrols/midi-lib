@@ -36,6 +36,11 @@
 #define MIDI_CHANNEL_OFF        18
 
 ///
+/// \brief Value used to signal the invalid MIDI channel.
+///
+#define MIDI_CHANNEL_INVALID    255
+
+///
 /// \brief Values defining MIDI Pitch Bend range.
 /// @{
 ///

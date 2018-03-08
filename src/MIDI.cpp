@@ -1158,15 +1158,17 @@ uint8_t MIDI::getChannel(midiInterfaceType_t type)
     switch(type)
     {
         case dinInterface:
-        return dinMessage.channel - zeroStartChannel;
+        if (dinMessage.channel)
+            return dinMessage.channel - zeroStartChannel;
         break;
 
         case usbInterface:
-        return usbMessage.channel - zeroStartChannel;
+        if (usbMessage.channel)
+            return usbMessage.channel - zeroStartChannel;
         break;
     }
 
-    return 0;
+    return MIDI_CHANNEL_INVALID;
 }
 
 ///
