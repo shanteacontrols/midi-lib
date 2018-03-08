@@ -80,7 +80,7 @@ void MIDI::send(midiMessageType_t inType, uint8_t inData1, uint8_t inData2, uint
         if (inChannel >= 16)
             validCheck = false;
         else
-            inChannel--; //normalize channel
+            inChannel++; //normalize channel
     }
     else
     {
