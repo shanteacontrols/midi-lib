@@ -61,6 +61,12 @@
 #define MIDI_14_BIT_VALUE_MAX   16383
 
 ///
+/// \brief Decoded MIDI messages for USB and DIN interfaces.
+///
+extern MIDImessage_t            dinMessage,
+                                usbMessage;
+
+///
 /// \brief MIDI library main class.
 /// @{
 ///
