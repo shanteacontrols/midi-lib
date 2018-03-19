@@ -173,9 +173,7 @@ typedef struct
             newHigh &= ~0x01;
         }
 
-        newLow = lowByte_7bit(newLow);
-        high = newHigh & 0x7F;
-        low = newLow & 0x7F;
+        newLow &= 0x7F;
     }
 
     void mergeTo14bit()
