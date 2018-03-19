@@ -26,6 +26,20 @@
 #include <inttypes.h>
 
 ///
+/// \brief Extracts lower 7 bits from 14-bit value.
+/// \param [in] value   14-bit value.
+/// \returns    Lower 7 bits.
+///
+#define lowByte_7bit(value)             ((value) & 0x7F)
+
+///
+/// \brief Extracts upper 7 bits from 14-bit value.
+/// \param [in] value   14-bit value.
+/// \returns    Upper 7 bits.
+///
+#define highByte_7bit(value) ((value >> 7) & 0x7f)
+
+///
 /// \brief Constructs a USB MIDI event ID from a given MIDI command and a virtual MIDI cable index.
 ///
 /// This can then be used to create and decode MIDI event packets.
