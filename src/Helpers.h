@@ -37,7 +37,7 @@
 /// \param [in] value   14-bit value.
 /// \returns    Upper 7 bits.
 ///
-#define highByte_7bit(value) ((value >> 7) & 0x7f)
+#define highByte_7bit(value)            ((value >> 7) & 0x7f)
 
 ///
 /// \brief Constructs a USB MIDI event ID from a given MIDI command and a virtual MIDI cable index.
