@@ -22,43 +22,9 @@
 
 #pragma once
 
+#include "Constants.h"
 #include "DataTypes.h"
 #include "Helpers.h"
-
-///
-/// \brief Value used to listen incoming MIDI messages on all channels.
-///
-#define MIDI_CHANNEL_OMNI       17
-
-///
-/// \brief Value used to turn the listening of incoming MIDI messages off.
-///
-#define MIDI_CHANNEL_OFF        18
-
-///
-/// \brief Value used to signal the invalid MIDI channel.
-///
-#define MIDI_CHANNEL_INVALID    255
-
-///
-/// \brief Values defining MIDI Pitch Bend range.
-/// @{
-///
-
-#define MIDI_PITCHBEND_MIN      -8192
-#define MIDI_PITCHBEND_MAX      8191
-
-/// @}
-
-///
-/// \brief Maximum 7-bit MIDI value.
-///
-#define MIDI_7_BIT_VALUE_MAX    127
-
-///
-/// \brief Maximum 14-bit MIDI value.
-///
-#define MIDI_14_BIT_VALUE_MAX   16383
 
 ///
 /// \brief Decoded MIDI messages for USB and DIN interfaces.
