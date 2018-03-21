@@ -49,6 +49,7 @@ bool                (*sendUSBreadCallback)(USBMIDIpacket_t& USBMIDIpacket);
 bool                (*sendUSBwriteCallback)(USBMIDIpacket_t& USBMIDIpacket);
 
 uint8_t             zeroStartChannel;
+bool                dinValidityCheckStateThru;
 
 ///
 /// \brief Default constructor.
@@ -634,34 +635,41 @@ uint8_t MIDI::getStatus(midiMessageType_t inType, uint8_t inChannel)
 /// it is sent back on the MIDI output.
 /// \param type [in]        MIDI interface which is being read (USB or UART). See midiInterfaceType_t.
 /// \param filterMode [in]  Thru filter mode. See midiFilterMode_t.
-/// \returns True if a valid message has been read, false otherwise.
 ///
-bool MIDI::read(midiInterfaceType_t type, midiFilterMode_t filterMode)
+void MIDI::read(midiInterfaceType_t type, midiFilterMode_t filterMode)
 {
     if (mInputChannel == MIDI_CHANNEL_OFF)
-        return false; //MIDI Input disabled
+        return; //MIDI Input disabled
 
     switch(type)
     {
         case usbInterface:
         if (!usbEnabled)
-            return false;
+            return;
         break;
 
         case dinInterface:
         if (!dinEnabled)
-            return false;
+            return;
         break;
     }
 
-    if (!parse(type))
-        return false;
+    if (!dinValidityCheckStateThru && (filterMode == THRU_FULL_DIN) || (filterMode == THRU_CHANNEL_DIN)
+    {
+        //just pass data directly without checking
+        int16_t data = sendUARTreadCallback();
 
-    const bool channelMatch = inputFilter(mInputChannel, type);
+        if (data != -1)
+            sendUARTwriteCallback(data);
+    }
+    else
+    {
+        if (!parse(type))
+            return;
 
-    thruFilter(mInputChannel, type, filterMode);
-
-    return channelMatch;
+        const bool channelMatch = inputFilter(mInputChannel, type);
+        thruFilter(mInputChannel, type, filterMode);
+    }
 }
 
 ///
@@ -1597,6 +1605,16 @@ note_t MIDI::getTonicFromNote(int8_t note)
 void MIDI::setChannelSendZeroStart(bool state)
 {
     zeroStartChannel = state ? 1 : 0;
+}
+
+///
+/// \brief Enables or disables validity checks for incoming DIN MIDI traffic during thruing to DIN MIDI out.
+/// When disabled, all received DIN MIDI traffic will be forwarded to DIN MIDI out (if thruing to that
+/// interface is enabled) directly without parsing MIDI message first.
+///
+void MIDI::setDINvalidityCheckState(bool state)
+{
+    dinValidityCheckStateThru = state;
 }
 
 ///

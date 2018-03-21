@@ -88,7 +88,7 @@ class MIDI
     //MIDI input
 
     public:
-    static bool read(midiInterfaceType_t type, midiFilterMode_t filterMode = THRU_OFF);
+    static void read(midiInterfaceType_t type, midiFilterMode_t filterMode = THRU_OFF);
     static midiMessageType_t getType(midiInterfaceType_t type);
     static uint8_t getChannel(midiInterfaceType_t type);
     static uint8_t getData1(midiInterfaceType_t type);
@@ -102,6 +102,7 @@ class MIDI
     static bool isChannelMessage(midiMessageType_t inType);
     static void setOneByteParseDINstate(bool state);
     static bool getOneByteParseDINstate();
+    static void setDINvalidityCheckState(bool state);
 
     private:
     static void thruFilter(uint8_t inChannel, midiInterfaceType_t type, midiFilterMode_t filterMode);
