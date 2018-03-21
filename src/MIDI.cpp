@@ -635,22 +635,23 @@ uint8_t MIDI::getStatus(midiMessageType_t inType, uint8_t inChannel)
 /// it is sent back on the MIDI output.
 /// \param type [in]        MIDI interface which is being read (USB or UART). See midiInterfaceType_t.
 /// \param filterMode [in]  Thru filter mode. See midiFilterMode_t.
+/// \returns True on successful read.
 ///
-void MIDI::read(midiInterfaceType_t type, midiFilterMode_t filterMode)
+bool MIDI::read(midiInterfaceType_t type, midiFilterMode_t filterMode)
 {
     if (mInputChannel == MIDI_CHANNEL_OFF)
-        return; //MIDI Input disabled
+        return false; //MIDI Input disabled
 
     switch(type)
     {
         case usbInterface:
         if (!usbEnabled)
-            return;
+            return false;
         break;
 
         case dinInterface:
         if (!dinEnabled)
-            return;
+            return false;
         break;
     }
 
@@ -659,16 +660,20 @@ void MIDI::read(midiInterfaceType_t type, midiFilterMode_t filterMode)
         //just pass data directly without checking
         int16_t data = sendUARTreadCallback();
 
-        if (data != -1)
-            sendUARTwriteCallback(data);
+        if (data == -1)
+            return false;
+
+        sendUARTwriteCallback(data);
     }
     else
     {
         if (!parse(type))
-            return;
+            return false;
 
         const bool channelMatch = inputFilter(mInputChannel, type);
         thruFilter(mInputChannel, type, filterMode);
+
+        return channelMatch;
     }
 }
 
