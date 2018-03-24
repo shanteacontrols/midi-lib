@@ -658,13 +658,24 @@ bool MIDI::read(midiInterfaceType_t type, midiFilterMode_t filterMode)
     if (!dinValidityCheckStateThru && ((filterMode == THRU_FULL_DIN) || (filterMode == THRU_CHANNEL_DIN)))
     {
         //just pass data directly without checking
-        int16_t data = sendUARTreadCallback();
+        bool inReceived = false;
 
-        if (data == -1)
-            return false;
+        while (1)
+        {
+            int16_t data = sendUARTreadCallback();
 
-        sendUARTwriteCallback(data);
-        return true;
+            if (data != -1)
+            {
+                inReceived = true;
+                sendUARTwriteCallback(data);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return inReceived;
     }
     else
     {
