@@ -48,12 +48,6 @@ class MIDI
     static void handleUSBread(bool(*fptr)(USBMIDIpacket_t& USBMIDIpacket));
     static void handleUSBwrite(bool(*fptr)(USBMIDIpacket_t& USBMIDIpacket));
 
-    static void setUSBMIDIstate(bool state);
-    static bool getUSBMIDIstate();
-
-    static void setDINMIDIstate(bool state);
-    static bool getDINMIDIstate();
-
     static void setChannelSendZeroStart(bool state);
 
     //MIDI output

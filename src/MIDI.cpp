@@ -22,9 +22,6 @@
 
 #include "MIDI.h"
 
-bool                usbEnabled,
-                    dinEnabled;
-
 bool                useRunningStatus;
 bool                use1byteParsing;
 
@@ -89,9 +86,9 @@ void MIDI::send(midiMessageType_t inType, uint8_t inData1, uint8_t inData2, uint
             validCheck = false;
     }
 
-    if (!validCheck || (inType < 0x80))
+    if (!validCheck || (inType < midiMessageNoteOff))
     {
-        if (useRunningStatus && dinEnabled)
+        if (useRunningStatus)
             mRunningStatus_TX = midiMessageInvalidType;
 
         return; //don't send anything
@@ -106,7 +103,7 @@ void MIDI::send(midiMessageType_t inType, uint8_t inData1, uint8_t inData2, uint
 
         const uint8_t status = getStatus(inType, inChannel);
 
-        if (dinEnabled)
+        if (sendUARTwriteCallback != NULL)
         {
             if (useRunningStatus)
             {
@@ -132,7 +129,7 @@ void MIDI::send(midiMessageType_t inType, uint8_t inData1, uint8_t inData2, uint
             }
         }
 
-        if (usbEnabled)
+        if (sendUSBwriteCallback != NULL)
         {
             uint8_t midiEvent = (uint8_t)inType >> 4;
             uint8_t data1 = getStatus(inType, inChannel);
@@ -246,7 +243,7 @@ void MIDI::sendPitchBend(int16_t inPitchValue, uint8_t inChannel)
 ///
 void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayContainsBoundaries)
 {
-    if (dinEnabled && (sendUARTwriteCallback != NULL))
+    if (sendUARTwriteCallback != NULL)
     {
         if (!inArrayContainsBoundaries)
             sendUARTwriteCallback(0xf0);
@@ -261,7 +258,7 @@ void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayCont
             mRunningStatus_TX = midiMessageInvalidType;
     }
 
-    if (usbEnabled)
+    if (sendUSBwriteCallback != NULL)
     {
         USBMIDIpacket_t MIDIEvent;
 
@@ -499,9 +496,13 @@ void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayCont
 ///
 void MIDI::sendTuneRequest()
 {
-    sendUARTwriteCallback((uint8_t)midiMessageTuneRequest);
-    if (useRunningStatus && dinEnabled)
-        mRunningStatus_TX = midiMessageInvalidType;
+    if (sendUARTwriteCallback != NULL)
+    {
+        sendUARTwriteCallback((uint8_t)midiMessageTuneRequest);
+
+        if (useRunningStatus)
+            mRunningStatus_TX = midiMessageInvalidType;
+    }
 }
 
 ///
@@ -572,10 +573,10 @@ void MIDI::sendRealTime(midiMessageType_t inType)
         case midiMessageContinue:
         case midiMessageActiveSensing:
         case midiMessageSystemReset:
-        if (dinEnabled)
+        if (sendUARTwriteCallback != NULL)
             sendUARTwriteCallback((uint8_t)inType);
 
-        if (usbEnabled)
+        if (sendUSBwriteCallback != NULL)
         {
             USBMIDIpacket_t MIDIEvent = (USBMIDIpacket_t)
             {
@@ -645,17 +646,17 @@ bool MIDI::read(midiInterfaceType_t type, midiFilterMode_t filterMode)
     switch(type)
     {
         case usbInterface:
-        if (!usbEnabled)
+        if (sendUSBreadCallback == NULL)
             return false;
         break;
 
         case dinInterface:
-        if (!dinEnabled)
+        if (sendUARTwriteCallback == NULL)
             return false;
         break;
     }
 
-    if (!dinValidityCheckStateThru && ((filterMode == THRU_FULL_DIN) || (filterMode == THRU_CHANNEL_DIN)))
+    if (!dinValidityCheckStateThru && ((filterMode == THRU_FULL_DIN) || (filterMode == THRU_CHANNEL_DIN)) && (type == dinInterface))
     {
         //just pass data directly without checking
         bool inReceived = false;
@@ -1437,19 +1438,20 @@ void MIDI::thruFilter(uint8_t inChannel, midiInterfaceType_t type, midiFilterMod
     MIDImessage_t *msg;
     msg = type == dinInterface ? &dinMessage : &usbMessage;
 
-    bool savedDINstate = dinEnabled;
-    bool savedUSBstate = usbEnabled;
+    //save pointers to temp variable
+    int8_t (*sendUARTwriteCallback_temp)(uint8_t data) = sendUARTwriteCallback;
+    bool (*sendUSBwriteCallback_temp)(USBMIDIpacket_t& USBMIDIpacket) = sendUSBwriteCallback;
 
     switch(filterMode)
     {
         case THRU_FULL_DIN:
         case THRU_CHANNEL_DIN:
-        setUSBMIDIstate(false);
+        sendUSBwriteCallback = NULL;
         break;
 
         case THRU_FULL_USB:
         case THRU_CHANNEL_USB:
-        setDINMIDIstate(false);
+        sendUARTwriteCallback = NULL;
         break;
 
         case THRU_FULL_ALL:
@@ -1527,8 +1529,9 @@ void MIDI::thruFilter(uint8_t inChannel, midiInterfaceType_t type, midiFilterMod
         }
     }
 
-    setUSBMIDIstate(savedUSBstate);
-    setDINMIDIstate(savedDINstate);
+    //restore pointers
+    sendUARTwriteCallback = sendUARTwriteCallback_temp;
+    sendUSBwriteCallback = sendUSBwriteCallback_temp;
 }
 
 ///
@@ -1546,42 +1549,6 @@ void MIDI::setNoteOffMode(noteOffType_t type)
 noteOffType_t MIDI::getNoteOffMode()
 {
     return noteOffMode;
-}
-
-///
-/// \brief Enables or disables USB MIDI interface.
-/// \param state [in] New state of USB MIDI interface (true/enabled, false/disabled).
-///
-void MIDI::setUSBMIDIstate(bool state)
-{
-    usbEnabled = state;
-}
-
-///
-/// \brief Checks current state of USB MIDI interface.
-/// \returns True if USB MIDI interface is enabled, false otherwise.
-///
-bool MIDI::getUSBMIDIstate()
-{
-    return usbEnabled;
-}
-
-///
-/// \brief Enables or disables DIN MIDI interface.
-/// \param state [in] New state of DIN MIDI interface (true/enabled, false/disabled).
-///
-void MIDI::setDINMIDIstate(bool state)
-{
-    dinEnabled = state;
-}
-
-///
-/// \brief Checks current state of DIN MIDI interface.
-/// \returns True if DIN MIDI interface is enabled, false otherwise.
-///
-bool MIDI::getDINMIDIstate()
-{
-    return dinEnabled;
 }
 
 ///
