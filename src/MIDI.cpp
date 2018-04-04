@@ -132,13 +132,12 @@ void MIDI::send(midiMessageType_t inType, uint8_t inData1, uint8_t inData2, uint
         if (sendUSBwriteCallback != NULL)
         {
             uint8_t midiEvent = (uint8_t)inType >> 4;
-            uint8_t data1 = getStatus(inType, inChannel);
 
             USBMIDIpacket_t MIDIEvent = (USBMIDIpacket_t)
             {
                 .Event  = midiEvent,
 
-                .Data1  = data1,
+                .Data1  = status,
                 .Data2  = inData1,
                 .Data3  = inData2,
             };
