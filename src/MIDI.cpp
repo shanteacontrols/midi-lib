@@ -224,13 +224,13 @@ void MIDI::sendAfterTouch(uint8_t inPressure, uint8_t inChannel)
 
 ///
 /// \brief Send a Pitch Bend message using a signed integer value.
-/// \param inPitchValue [in]  The amount of bend to send between MIDI_PITCHBEND_MIN and MIDI_PITCHBEND_MAX.
+/// \param inPitchValue [in]  The amount of bend to send (0-16383).
 /// \param inChannel [in]     The channel on which the message will be sent (1 to 16).
 ///
-void MIDI::sendPitchBend(int16_t inPitchValue, uint8_t inChannel)
+void MIDI::sendPitchBend(uint16_t inPitchValue, uint8_t inChannel)
 {
-    const unsigned bend = inPitchValue - MIDI_PITCHBEND_MIN;
-    send(midiMessagePitchBend, lowByte_7bit(bend), highByte_7bit(bend), inChannel);
+    inPitchValue &= 0x3FFF;
+    send(midiMessagePitchBend, lowByte_7bit(inPitchValue), highByte_7bit(inPitchValue), inChannel);
 }
 
 ///

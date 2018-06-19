@@ -56,7 +56,7 @@ class MIDI
     static void sendNoteOff(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel);
     static void sendProgramChange(uint8_t inProgramNumber, uint8_t inChannel);
     static void sendControlChange(uint8_t inControlNumber, uint8_t inControlValue, uint8_t inChannel);
-    static void sendPitchBend(int16_t inPitchValue, uint8_t inChannel);
+    static void sendPitchBend(uint16_t inPitchValue, uint8_t inChannel);
     static void sendAfterTouch(uint8_t inPressure, uint8_t inChannel, uint8_t inNoteNumber);
     static void sendAfterTouch(uint8_t inPressure, uint8_t inChannel);
     static void sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayContainsBoundaries);

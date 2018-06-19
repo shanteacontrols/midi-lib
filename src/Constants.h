@@ -38,16 +38,6 @@
 #define MIDI_CHANNEL_INVALID    255
 
 ///
-/// \brief Values defining MIDI Pitch Bend range.
-/// @{
-///
-
-#define MIDI_PITCHBEND_MIN      -8192
-#define MIDI_PITCHBEND_MAX      8191
-
-/// @}
-
-///
 /// \brief Maximum 7-bit MIDI value.
 ///
 #define MIDI_7_BIT_VALUE_MAX    127
