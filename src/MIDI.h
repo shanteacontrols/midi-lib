@@ -32,6 +32,8 @@
 extern MIDImessage_t            dinMessage,
                                 usbMessage;
 
+extern USBMIDIpacket_t          usbMIDIpacket;
+
 ///
 /// \brief MIDI library main class.
 /// @{
@@ -83,6 +85,7 @@ class MIDI
 
     public:
     static bool read(midiInterfaceType_t type, midiFilterMode_t filterMode = THRU_OFF);
+    static bool parse(midiInterfaceType_t type);
     static midiMessageType_t getType(midiInterfaceType_t type);
     static uint8_t getChannel(midiInterfaceType_t type);
     static uint8_t getData1(midiInterfaceType_t type);
@@ -96,11 +99,9 @@ class MIDI
     static bool isChannelMessage(midiMessageType_t inType);
     static void setOneByteParseDINstate(bool state);
     static bool getOneByteParseDINstate();
-    static void setDINvalidityCheckState(bool state);
 
     private:
     static void thruFilter(uint8_t inChannel, midiInterfaceType_t type, midiFilterMode_t filterMode);
-    static bool parse(midiInterfaceType_t type);
     static bool inputFilter(uint8_t inChannel, midiInterfaceType_t type);
     static void resetInput();
     static uint8_t getStatus(midiMessageType_t inType, uint8_t inChannel);
