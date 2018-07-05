@@ -97,8 +97,8 @@ class MIDI
     static midiMessageType_t getTypeFromStatusByte(uint8_t inStatus);
     static uint8_t getChannelFromStatusByte(uint8_t inStatus);
     static bool isChannelMessage(midiMessageType_t inType);
-    static void setOneByteParseDINstate(bool state);
-    static bool getOneByteParseDINstate();
+    static void useRecursiveParsing(bool state);
+    static bool getRecursiveParseState();
 
     private:
     static void thruFilter(uint8_t inChannel, midiInterfaceType_t type, midiFilterMode_t filterMode);

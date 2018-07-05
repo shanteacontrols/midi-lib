@@ -23,7 +23,7 @@
 #include "MIDI.h"
 
 bool                useRunningStatus;
-bool                use1byteParsing;
+bool                recursiveParseState;
 
 uint8_t             mRunningStatus_RX,
                     mRunningStatus_TX;
@@ -790,7 +790,7 @@ bool MIDI::parse(midiInterfaceType_t type)
                 dinPendingMessageIndex++;
             }
 
-            if (use1byteParsing)
+            if (!recursiveParseState)
             {
                 //message is not complete.
                 return false;
@@ -926,7 +926,7 @@ bool MIDI::parse(midiInterfaceType_t type)
                 //update the index of the pending message
                 dinPendingMessageIndex++;
 
-                if (use1byteParsing)
+                if (!recursiveParseState)
                     return false;   //message is not complete.
                 else
                     return parse(dinInterface); //call the parser recursively to parse the rest of the message.
@@ -1370,25 +1370,24 @@ bool MIDI::isChannelMessage(midiMessageType_t inType)
 }
 
 ///
-/// \brief Used to enable or disable one byte parsing of incoming messages on UART.
-///
-/// Setting this to true will make MIDI.read parse only one byte of data for each
+/// \brief Used to enable or disable recursive parsing of incoming messages on UART interface.
+/// Setting this to false will make MIDI.read parse only one byte of data for each
 /// call when data is available. This can speed up your application if receiving
 /// a lot of traffic, but might induce MIDI Thru and treatment latency.
-/// \param state [in]   Set to true to enable one byte parsing or false to disable it.
+/// \param state [in]   Set to true to enable recursive parsing or false to disable it.
 ///
-void MIDI::setOneByteParseDINstate(bool state)
+void MIDI::useRecursiveParsing(bool state)
 {
-    use1byteParsing = state;
+    recursiveParseState = state;
 }
 
 ///
-/// \brief Checks current status of one-byte parsing for incoming UART messages.
-/// \returns True if one byte parsing is enabled, false otherwise.
+/// \brief Checks current status of recursive parsing for incoming UART messages.
+/// \returns True if recursive parsing is enabled, false otherwise.
 ///
-bool MIDI::getOneByteParseDINstate()
+bool MIDI::getRecursiveParseState()
 {
-    return use1byteParsing;
+    return recursiveParseState;
 }
 
 ///
