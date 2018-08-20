@@ -947,6 +947,7 @@ bool MIDI::parse(midiInterfaceType_t type)
         {
             //1 byte messages
             case sysCommon1byteCin:
+            case singleByte:
             if (usbMIDIpacket.Data1 != 0xF7)
             {
                 //this isn't end of sysex, it's 1byte system common message

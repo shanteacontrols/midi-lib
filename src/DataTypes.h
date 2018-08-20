@@ -65,16 +65,17 @@ typedef enum
 } midiMessageType_t;
 
 ///
-/// \brief Enumeration holding USB-specific values for SysEx messages.
+/// \brief Enumeration holding USB-specific values for SysEx/System Common messages.
 ///
 /// Normally, USB MIDI CIN (cable index number) is just midiMessageType_t shifted left by four bytes,
-/// however, System Common/SysEx messages have different values so they're grouped in special enumeration.
+/// however, SysEx/System Common messages have different values so they're grouped in special enumeration.
 ///
 typedef enum
 {
     sysCommon1byteCin   = 0x50,
     sysCommon2byteCin   = 0x20,
     sysCommon3byteCin   = 0x30,
+    singleByte          = 0xF0,
     sysExStartCin       = 0x40,
     sysExStop1byteCin   = sysCommon1byteCin,
     sysExStop2byteCin   = 0x60,
