@@ -44,8 +44,8 @@ class MIDI
     public:
     MIDI();
 
-    static void handleUARTread(int16_t(*fptr)());
-    static void handleUARTwrite(int8_t(*fptr)(uint8_t data));
+    static void handleUARTread(bool(*fptr)(uint8_t &data));
+    static void handleUARTwrite(bool(*fptr)(uint8_t data));
 
     static void handleUSBread(bool(*fptr)(USBMIDIpacket_t& USBMIDIpacket));
     static void handleUSBwrite(bool(*fptr)(USBMIDIpacket_t& USBMIDIpacket));

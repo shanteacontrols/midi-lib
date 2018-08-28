@@ -39,8 +39,8 @@ MIDImessage_t       dinMessage,
 
 noteOffType_t       noteOffMode;
 
-int16_t             (*sendUARTreadCallback)();
-int8_t              (*sendUARTwriteCallback)(uint8_t data);
+bool                (*sendUARTreadCallback)(uint8_t &data);
+bool                (*sendUARTwriteCallback)(uint8_t data);
 
 bool                (*sendUSBreadCallback)(USBMIDIpacket_t& USBMIDIpacket);
 bool                (*sendUSBwriteCallback)(USBMIDIpacket_t& USBMIDIpacket);
@@ -676,9 +676,9 @@ bool MIDI::parse(midiInterfaceType_t type)
         if (sendUARTreadCallback == NULL)
             return false;
 
-        int16_t data = sendUARTreadCallback();
+        uint8_t data = 0;
 
-        if (data == -1)
+        if (!sendUARTreadCallback(data))
             return false;   //no data available
 
         const uint8_t extracted = data;
@@ -1412,7 +1412,7 @@ void MIDI::thruFilter(uint8_t inChannel, midiInterfaceType_t type, midiFilterMod
     msg = type == dinInterface ? &dinMessage : &usbMessage;
 
     //save pointers to temp variable
-    int8_t (*sendUARTwriteCallback_temp)(uint8_t data) = sendUARTwriteCallback;
+    bool (*sendUARTwriteCallback_temp)(uint8_t data) = sendUARTwriteCallback;
     bool (*sendUSBwriteCallback_temp)(USBMIDIpacket_t& USBMIDIpacket) = sendUSBwriteCallback;
 
     switch(filterMode)
@@ -1567,10 +1567,9 @@ void MIDI::setChannelSendZeroStart(bool state)
 ///
 /// \brief Used to configure function which reads data from UART.
 ///
-/// Value -1 must be returned if there is nothing to be read from UART.
 /// \param fptr [in]    Pointer to function.
 ///
-void MIDI::handleUARTread(int16_t(*fptr)())
+void MIDI::handleUARTread(bool(*fptr)(uint8_t &data))
 {
     sendUARTreadCallback = fptr;
 }
@@ -1578,10 +1577,9 @@ void MIDI::handleUARTread(int16_t(*fptr)())
 ///
 /// \brief Used to configure function which writes data to UART.
 ///
-/// Value -1 must be returned if writing to UART has failed.
 /// \param fptr [in]    Pointer to function.
 ///
-void MIDI::handleUARTwrite(int8_t(*fptr)(uint8_t data))
+void MIDI::handleUARTwrite(bool(*fptr)(uint8_t data))
 {
     sendUARTwriteCallback = fptr;
 }
