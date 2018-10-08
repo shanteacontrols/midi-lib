@@ -22,42 +22,15 @@
 
 #include "MIDI.h"
 
-bool                useRunningStatus;
-bool                recursiveParseState;
-
-uint8_t             mRunningStatus_RX,
-                    mRunningStatus_TX;
-
-uint8_t             mInputChannel;
-uint8_t             mPendingMessage[3];
-uint16_t            dinPendingMessageExpectedLenght;
-uint16_t            dinPendingMessageIndex;
-uint16_t            sysExArrayLength;
-
-MIDImessage_t       dinMessage,
-                    usbMessage;
-
-noteOffType_t       noteOffMode;
-
-bool                (*sendUARTreadCallback)(uint8_t &data);
-bool                (*sendUARTwriteCallback)(uint8_t data);
-
-bool                (*sendUSBreadCallback)(USBMIDIpacket_t& USBMIDIpacket);
-bool                (*sendUSBwriteCallback)(USBMIDIpacket_t& USBMIDIpacket);
-
-uint8_t             zeroStartChannel;
-
-USBMIDIpacket_t     usbMIDIpacket;
-
 ///
 /// \brief Default constructor.
 ///
 MIDI::MIDI()
 {
-    sendUARTwriteCallback   = NULL;
-    sendUARTreadCallback    = NULL;
-    sendUSBwriteCallback    = NULL;
-    sendUSBreadCallback     = NULL;
+    sendUARTwriteCallback   = nullptr;
+    sendUARTreadCallback    = nullptr;
+    sendUSBwriteCallback    = nullptr;
+    sendUSBreadCallback     = nullptr;
 }
 
 ///
@@ -104,7 +77,7 @@ void MIDI::send(midiMessageType_t inType, uint8_t inData1, uint8_t inData2, uint
 
         const uint8_t status = getStatus(inType, inChannel);
 
-        if (sendUARTwriteCallback != NULL)
+        if (sendUARTwriteCallback != nullptr)
         {
             if (useRunningStatus)
             {
@@ -130,7 +103,7 @@ void MIDI::send(midiMessageType_t inType, uint8_t inData1, uint8_t inData2, uint
             }
         }
 
-        if (sendUSBwriteCallback != NULL)
+        if (sendUSBwriteCallback != nullptr)
         {
             uint8_t midiEvent = (uint8_t)inType >> 4;
 
@@ -243,7 +216,7 @@ void MIDI::sendPitchBend(uint16_t inPitchValue, uint8_t inChannel)
 ///
 void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayContainsBoundaries)
 {
-    if (sendUARTwriteCallback != NULL)
+    if (sendUARTwriteCallback != nullptr)
     {
         if (!inArrayContainsBoundaries)
             sendUARTwriteCallback(0xf0);
@@ -258,7 +231,7 @@ void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayCont
             mRunningStatus_TX = midiMessageInvalidType;
     }
 
-    if (sendUSBwriteCallback != NULL)
+    if (sendUSBwriteCallback != nullptr)
     {
         USBMIDIpacket_t MIDIEvent;
 
@@ -496,7 +469,7 @@ void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayCont
 ///
 void MIDI::sendTuneRequest()
 {
-    if (sendUARTwriteCallback != NULL)
+    if (sendUARTwriteCallback != nullptr)
     {
         sendUARTwriteCallback((uint8_t)midiMessageTuneRequest);
 
@@ -573,10 +546,10 @@ void MIDI::sendRealTime(midiMessageType_t inType)
         case midiMessageContinue:
         case midiMessageActiveSensing:
         case midiMessageSystemReset:
-        if (sendUARTwriteCallback != NULL)
+        if (sendUARTwriteCallback != nullptr)
             sendUARTwriteCallback((uint8_t)inType);
 
-        if (sendUSBwriteCallback != NULL)
+        if (sendUSBwriteCallback != nullptr)
         {
             USBMIDIpacket_t MIDIEvent = (USBMIDIpacket_t)
             {
@@ -646,12 +619,12 @@ bool MIDI::read(midiInterfaceType_t type, midiFilterMode_t filterMode)
     switch(type)
     {
         case usbInterface:
-        if (sendUSBreadCallback == NULL)
+        if (sendUSBreadCallback == nullptr)
             return false;
         break;
 
         case dinInterface:
-        if (sendUARTwriteCallback == NULL)
+        if (sendUARTwriteCallback == nullptr)
             return false;
         break;
     }
@@ -673,7 +646,7 @@ bool MIDI::parse(midiInterfaceType_t type)
 {
     if (type == dinInterface)
     {
-        if (sendUARTreadCallback == NULL)
+        if (sendUARTreadCallback == nullptr)
             return false;
 
         uint8_t data = 0;
@@ -1419,12 +1392,12 @@ void MIDI::thruFilter(uint8_t inChannel, midiInterfaceType_t type, midiFilterMod
     {
         case THRU_FULL_DIN:
         case THRU_CHANNEL_DIN:
-        sendUSBwriteCallback = NULL;
+        sendUSBwriteCallback = nullptr;
         break;
 
         case THRU_FULL_USB:
         case THRU_CHANNEL_USB:
-        sendUARTwriteCallback = NULL;
+        sendUARTwriteCallback = nullptr;
         break;
 
         case THRU_FULL_ALL:

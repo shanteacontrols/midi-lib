@@ -27,14 +27,6 @@
 #include "Helpers.h"
 
 ///
-/// \brief Decoded MIDI messages for USB and DIN interfaces.
-///
-extern MIDImessage_t            dinMessage,
-                                usbMessage;
-
-extern USBMIDIpacket_t          usbMIDIpacket;
-
-///
 /// \brief MIDI library main class.
 /// @{
 ///
@@ -44,67 +36,92 @@ class MIDI
     public:
     MIDI();
 
-    static void handleUARTread(bool(*fptr)(uint8_t &data));
-    static void handleUARTwrite(bool(*fptr)(uint8_t data));
+    void handleUARTread(bool(*fptr)(uint8_t &data));
+    void handleUARTwrite(bool(*fptr)(uint8_t data));
 
-    static void handleUSBread(bool(*fptr)(USBMIDIpacket_t& USBMIDIpacket));
-    static void handleUSBwrite(bool(*fptr)(USBMIDIpacket_t& USBMIDIpacket));
+    void handleUSBread(bool(*fptr)(USBMIDIpacket_t& USBMIDIpacket));
+    void handleUSBwrite(bool(*fptr)(USBMIDIpacket_t& USBMIDIpacket));
 
-    static void setChannelSendZeroStart(bool state);
+    void setChannelSendZeroStart(bool state);
 
-    //MIDI output
-    public:
-    static void sendNoteOn(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel);
-    static void sendNoteOff(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel);
-    static void sendProgramChange(uint8_t inProgramNumber, uint8_t inChannel);
-    static void sendControlChange(uint8_t inControlNumber, uint8_t inControlValue, uint8_t inChannel);
-    static void sendPitchBend(uint16_t inPitchValue, uint8_t inChannel);
-    static void sendAfterTouch(uint8_t inPressure, uint8_t inChannel, uint8_t inNoteNumber);
-    static void sendAfterTouch(uint8_t inPressure, uint8_t inChannel);
-    static void sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayContainsBoundaries);
-    static void sendTimeCodeQuarterFrame(uint8_t inTypeNibble, uint8_t inValuesNibble);
-    static void sendTimeCodeQuarterFrame(uint8_t inData);
-    static void sendSongPosition(uint16_t inBeats);
-    static void sendSongSelect(uint8_t inSongNumber);
-    static void sendTuneRequest();
-    static void sendRealTime(midiMessageType_t inType);
-    static void setNoteOffMode(noteOffType_t type);
+    ///
+    /// \brief Decoded MIDI messages for USB and DIN interfaces.
+    ///
+    MIDImessage_t   dinMessage,
+                    usbMessage;
 
-    static void setRunningStatusState(bool state);
-    static bool getRunningStatusState();
+    void sendNoteOn(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel);
+    void sendNoteOff(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel);
+    void sendProgramChange(uint8_t inProgramNumber, uint8_t inChannel);
+    void sendControlChange(uint8_t inControlNumber, uint8_t inControlValue, uint8_t inChannel);
+    void sendPitchBend(uint16_t inPitchValue, uint8_t inChannel);
+    void sendAfterTouch(uint8_t inPressure, uint8_t inChannel, uint8_t inNoteNumber);
+    void sendAfterTouch(uint8_t inPressure, uint8_t inChannel);
+    void sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayContainsBoundaries);
+    void sendTimeCodeQuarterFrame(uint8_t inTypeNibble, uint8_t inValuesNibble);
+    void sendTimeCodeQuarterFrame(uint8_t inData);
+    void sendSongPosition(uint16_t inBeats);
+    void sendSongSelect(uint8_t inSongNumber);
+    void sendTuneRequest();
+    void sendRealTime(midiMessageType_t inType);
+    void setNoteOffMode(noteOffType_t type);
 
-    static noteOffType_t getNoteOffMode();
+    void setRunningStatusState(bool state);
+    bool getRunningStatusState();
+
+    noteOffType_t getNoteOffMode();
 
     static uint8_t getOctaveFromNote(int8_t note);
     static note_t getTonicFromNote(int8_t note);
 
     private:
-    static void send(midiMessageType_t inType, uint8_t inData1, uint8_t inData2, uint8_t inChannel);
+    void send(midiMessageType_t inType, uint8_t inData1, uint8_t inData2, uint8_t inChannel);
 
-    //MIDI input
-
-    public:
-    static bool read(midiInterfaceType_t type, midiFilterMode_t filterMode = THRU_OFF);
-    static bool parse(midiInterfaceType_t type);
-    static midiMessageType_t getType(midiInterfaceType_t type);
-    static uint8_t getChannel(midiInterfaceType_t type);
-    static uint8_t getData1(midiInterfaceType_t type);
-    static uint8_t getData2(midiInterfaceType_t type);
-    static uint8_t* getSysExArray(midiInterfaceType_t type);
-    static uint16_t getSysExArrayLength(midiInterfaceType_t type);
-    static uint8_t getInputChannel();
-    static bool setInputChannel(uint8_t inChannel);
-    static midiMessageType_t getTypeFromStatusByte(uint8_t inStatus);
-    static uint8_t getChannelFromStatusByte(uint8_t inStatus);
-    static bool isChannelMessage(midiMessageType_t inType);
-    static void useRecursiveParsing(bool state);
-    static bool getRecursiveParseState();
+    bool read(midiInterfaceType_t type, midiFilterMode_t filterMode = THRU_OFF);
+    bool parse(midiInterfaceType_t type);
+    midiMessageType_t getType(midiInterfaceType_t type);
+    uint8_t getChannel(midiInterfaceType_t type);
+    uint8_t getData1(midiInterfaceType_t type);
+    uint8_t getData2(midiInterfaceType_t type);
+    uint8_t* getSysExArray(midiInterfaceType_t type);
+    uint16_t getSysExArrayLength(midiInterfaceType_t type);
+    uint8_t getInputChannel();
+    bool setInputChannel(uint8_t inChannel);
+    midiMessageType_t getTypeFromStatusByte(uint8_t inStatus);
+    uint8_t getChannelFromStatusByte(uint8_t inStatus);
+    bool isChannelMessage(midiMessageType_t inType);
+    void useRecursiveParsing(bool state);
+    bool getRecursiveParseState();
 
     private:
-    static void thruFilter(uint8_t inChannel, midiInterfaceType_t type, midiFilterMode_t filterMode);
-    static bool inputFilter(uint8_t inChannel, midiInterfaceType_t type);
-    static void resetInput();
-    static uint8_t getStatus(midiMessageType_t inType, uint8_t inChannel);
+    void thruFilter(uint8_t inChannel, midiInterfaceType_t type, midiFilterMode_t filterMode);
+    bool inputFilter(uint8_t inChannel, midiInterfaceType_t type);
+    void resetInput();
+    uint8_t getStatus(midiMessageType_t inType, uint8_t inChannel);
+
+    bool                useRunningStatus;
+    bool                recursiveParseState;
+
+    uint8_t             mRunningStatus_RX,
+                        mRunningStatus_TX;
+
+    uint8_t             mInputChannel;
+    uint8_t             mPendingMessage[3];
+    uint16_t            dinPendingMessageExpectedLenght;
+    uint16_t            dinPendingMessageIndex;
+    uint16_t            sysExArrayLength;
+
+    noteOffType_t       noteOffMode;
+
+    bool                (*sendUARTreadCallback)(uint8_t &data);
+    bool                (*sendUARTwriteCallback)(uint8_t data);
+
+    bool                (*sendUSBreadCallback)(USBMIDIpacket_t& USBMIDIpacket);
+    bool                (*sendUSBwriteCallback)(USBMIDIpacket_t& USBMIDIpacket);
+
+    uint8_t             zeroStartChannel;
+
+    USBMIDIpacket_t     usbMIDIpacket;
 };
 
 /// @}
