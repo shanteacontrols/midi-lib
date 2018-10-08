@@ -34,7 +34,7 @@
 class MIDI
 {
     public:
-    MIDI();
+    MIDI() {}
     void handleUARTread(bool(*fptr)(uint8_t &data));
     void handleUARTwrite(bool(*fptr)(uint8_t data));
     void handleUSBread(bool(*fptr)(USBMIDIpacket_t& USBMIDIpacket));
@@ -89,8 +89,10 @@ class MIDI
     void resetInput();
     uint8_t getStatus(midiMessageType_t inType, uint8_t inChannel);
 
-    bool                useRunningStatus;
-    bool                recursiveParseState;
+    bool                useRunningStatus = false;
+    bool                recursiveParseState = false;
+
+    bool                zeroStartChannel = false;
 
     uint8_t             mRunningStatus_RX,
                         mRunningStatus_TX;
@@ -99,17 +101,14 @@ class MIDI
     uint8_t             mPendingMessage[3];
     uint16_t            dinPendingMessageExpectedLenght;
     uint16_t            dinPendingMessageIndex;
-    uint16_t            sysExArrayLength;
+    uint16_t            sysExArrayLength = 0;
 
-    noteOffType_t       noteOffMode;
+    noteOffType_t       noteOffMode = noteOffType_noteOnZeroVel;
 
-    bool                (*sendUARTreadCallback)(uint8_t &data);
-    bool                (*sendUARTwriteCallback)(uint8_t data);
-
-    bool                (*sendUSBreadCallback)(USBMIDIpacket_t& USBMIDIpacket);
-    bool                (*sendUSBwriteCallback)(USBMIDIpacket_t& USBMIDIpacket);
-
-    uint8_t             zeroStartChannel;
+    bool                (*sendUARTreadCallback)(uint8_t &data) = nullptr;
+    bool                (*sendUARTwriteCallback)(uint8_t data) = nullptr;
+    bool                (*sendUSBreadCallback)(USBMIDIpacket_t& USBMIDIpacket) = nullptr;
+    bool                (*sendUSBwriteCallback)(USBMIDIpacket_t& USBMIDIpacket) = nullptr;
 
     USBMIDIpacket_t     usbMIDIpacket;
 };

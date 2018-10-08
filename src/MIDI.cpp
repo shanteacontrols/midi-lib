@@ -23,17 +23,6 @@
 #include "MIDI.h"
 
 ///
-/// \brief Default constructor.
-///
-MIDI::MIDI()
-{
-    sendUARTwriteCallback   = nullptr;
-    sendUARTreadCallback    = nullptr;
-    sendUSBwriteCallback    = nullptr;
-    sendUSBreadCallback     = nullptr;
-}
-
-///
 /// \brief Generate and send a MIDI message from the values given.
 ///
 /// This is an internal method, use it only if you need to send raw data.
