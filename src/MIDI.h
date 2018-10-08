@@ -35,21 +35,11 @@ class MIDI
 {
     public:
     MIDI();
-
     void handleUARTread(bool(*fptr)(uint8_t &data));
     void handleUARTwrite(bool(*fptr)(uint8_t data));
-
     void handleUSBread(bool(*fptr)(USBMIDIpacket_t& USBMIDIpacket));
     void handleUSBwrite(bool(*fptr)(USBMIDIpacket_t& USBMIDIpacket));
-
     void setChannelSendZeroStart(bool state);
-
-    ///
-    /// \brief Decoded MIDI messages for USB and DIN interfaces.
-    ///
-    MIDImessage_t   dinMessage,
-                    usbMessage;
-
     void sendNoteOn(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel);
     void sendNoteOff(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel);
     void sendProgramChange(uint8_t inProgramNumber, uint8_t inChannel);
@@ -65,18 +55,12 @@ class MIDI
     void sendTuneRequest();
     void sendRealTime(midiMessageType_t inType);
     void setNoteOffMode(noteOffType_t type);
-
     void setRunningStatusState(bool state);
     bool getRunningStatusState();
-
     noteOffType_t getNoteOffMode();
-
     static uint8_t getOctaveFromNote(int8_t note);
     static note_t getTonicFromNote(int8_t note);
-
-    private:
     void send(midiMessageType_t inType, uint8_t inData1, uint8_t inData2, uint8_t inChannel);
-
     bool read(midiInterfaceType_t type, midiFilterMode_t filterMode = THRU_OFF);
     bool parse(midiInterfaceType_t type);
     midiMessageType_t getType(midiInterfaceType_t type);
@@ -92,6 +76,12 @@ class MIDI
     bool isChannelMessage(midiMessageType_t inType);
     void useRecursiveParsing(bool state);
     bool getRecursiveParseState();
+
+    ///
+    /// \brief Decoded MIDI messages for USB and DIN interfaces.
+    ///
+    MIDImessage_t       dinMessage,
+                        usbMessage;
 
     private:
     void thruFilter(uint8_t inChannel, midiInterfaceType_t type, midiFilterMode_t filterMode);
