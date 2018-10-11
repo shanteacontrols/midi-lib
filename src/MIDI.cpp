@@ -613,7 +613,7 @@ bool MIDI::read(midiInterfaceType_t type, midiFilterMode_t filterMode)
         break;
 
         case dinInterface:
-        if (sendUARTwriteCallback == nullptr)
+        if (sendUARTreadCallback == nullptr)
             return false;
         break;
     }
