@@ -941,7 +941,7 @@ bool MIDI::parse(midiInterfaceType_t type)
 
             //2 byte messages
             case sysCommon2byteCin:
-            //case midiMessageProgramChange:
+            case midiMessageProgramChange:
             //case midiMessageAfterTouchChannel:
             //case midiMessageTimeCodeQuarterFrame:
             //case midiMessageSongSelect:
