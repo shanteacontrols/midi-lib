@@ -46,3 +46,11 @@
 /// \brief Maximum 14-bit MIDI value.
 ///
 #define MIDI_14_BIT_VALUE_MAX   16383
+
+///
+/// \brief Size of internal array in which SysEx message is being stored in bytes.
+/// To override define global symbol with the same name.
+///
+#ifndef MIDI_SYSEX_ARRAY_SIZE
+#define MIDI_SYSEX_ARRAY_SIZE   45
+#endif

@@ -1,6 +1,6 @@
 /*
     Copyright 2016 Francois Best
-    Copyright 2017-2018 Igor Petrovic
+    Copyright 2017-2019 Igor Petrovic
 
     Permission is hereby granted, free of charge, to any person obtaining
     a copy of this software and associated documentation files (the "Software"),
@@ -23,16 +23,163 @@
 #pragma once
 
 #include "Constants.h"
-#include "DataTypes.h"
 #include "Helpers.h"
-
-///
-/// \brief MIDI library main class.
-/// @{
-///
 
 class MIDI
 {
+    public:
+    ///
+    /// \brief Enumeration holding various types of MIDI messages.
+    ///
+    enum class messageType_t : uint8_t
+    {
+        noteOff                         = 0x80, ///< Note Off
+        noteOn                          = 0x90, ///< Note On
+        controlChange                   = 0xB0, ///< Control Change / Channel Mode
+        programChange                   = 0xC0, ///< Program Change
+        afterTouchChannel               = 0xD0, ///< Channel (monophonic) AfterTouch
+        afterTouchPoly                  = 0xA0, ///< Polyphonic AfterTouch
+        pitchBend                       = 0xE0, ///< Pitch Bend
+        systemExclusive                 = 0xF0, ///< System Exclusive
+        sysCommonTimeCodeQuarterFrame   = 0xF1, ///< System Common - MIDI Time Code Quarter Frame
+        sysCommonSongPosition           = 0xF2, ///< System Common - Song Position Pointer
+        sysCommonSongSelect             = 0xF3, ///< System Common - Song Select
+        sysCommonTuneRequest            = 0xF6, ///< System Common - Tune Request
+        sysRealTimeClock                = 0xF8, ///< System Real Time - Timing Clock
+        sysRealTimeStart                = 0xFA, ///< System Real Time - Start
+        sysRealTimeContinue             = 0xFB, ///< System Real Time - Continue
+        sysRealTimeStop                 = 0xFC, ///< System Real Time - Stop
+        sysRealTimeActiveSensing        = 0xFE, ///< System Real Time - Active Sensing
+        sysRealTimeSystemReset          = 0xFF, ///< System Real Time - System Reset
+        invalid                         = 0x00  ///< For notifying errors
+    };
+
+    ///
+    /// \brief Enumeration holding two different types of MIDI interfaces.
+    ///
+    enum class interface_t : uint8_t
+    {
+        din,
+        usb
+    };
+
+    ///
+    /// \brief Holds various types of MIDI Thru filtering.
+    ///
+    enum class filterMode_t : uint8_t
+    {
+        off,
+        fullUSB,
+        fullDIN,
+        fullAll,
+        channelUSB,
+        channelDIN,
+        channelAll
+    };
+
+    ///
+    /// \brief Holds various types of MIDI Note Off message
+    ///
+    enum class noteOffType_t : uint8_t
+    {
+        noteOnZeroVel,
+        standardNoteOff
+    };
+
+    ///
+    /// \brief List off all possible MIDI notes.
+    ///
+    enum class note_t : uint8_t
+    {
+        C,
+        C_SHARP,
+        D,
+        D_SHARP,
+        E,
+        F,
+        F_SHARP,
+        G,
+        G_SHARP,
+        A,
+        A_SHARP,
+        B,
+        AMOUNT
+    };
+
+    ///
+    /// \brief USB MIDI event packet.
+    ///
+    /// Used to encapsulate sent and received MIDI messages from a USB MIDI interface.
+    ///
+    typedef struct
+    {
+        uint8_t Event; ///< MIDI event type, constructed with the \ref GET_USB_MIDI_EVENT() macro.
+        uint8_t Data1; ///< First byte of data in the MIDI event.
+        uint8_t Data2; ///< Second byte of data in the MIDI event.
+        uint8_t Data3; ///< Third byte of data in the MIDI event.
+    } USBMIDIpacket_t;
+
+    ///
+    /// \brief Enumeration holding USB-specific values for SysEx/System Common messages.
+    ///
+    /// Normally, USB MIDI CIN (cable index number) is just messageType_t shifted left by four bytes,
+    /// however, SysEx/System Common messages have different values so they're grouped in special enumeration.
+    ///
+    enum class usbMIDIsystemCin_t : uint8_t
+    {
+        sysCommon1byteCin   = 0x50,
+        sysCommon2byteCin   = 0x20,
+        sysCommon3byteCin   = 0x30,
+        singleByte          = 0xF0,
+        sysExStartCin       = 0x40,
+        sysExStop1byteCin   = sysCommon1byteCin,
+        sysExStop2byteCin   = 0x60,
+        sysExStop3byteCin   = 0x70
+    };
+
+    ///
+    /// \brief Structure used to convert two 7-bit values to single 14-bit value and vice versa.
+    ///
+    typedef struct
+    {
+        uint8_t high;
+        uint8_t low;
+        uint16_t value;
+
+        void split14bit()
+        {
+            uint8_t newHigh = (value >> 8) & 0xFF;
+            uint8_t newLow = value & 0xFF;
+            newHigh = (newHigh << 1) & 0x7F;
+
+            if ((newLow >> 7) & 0x01)
+                newHigh |= 0x01;
+            else
+                newHigh &= ~0x01;
+
+            newLow &= 0x7F;
+            high = newHigh;
+            low = newLow;
+        }
+
+        void mergeTo14bit()
+        {
+            if (high & 0x01)
+                low |= (1 << 7);
+            else
+                low &= ~(1 << 7);
+
+            high >>= 1;
+
+            uint16_t joined;
+            joined = high;
+            joined <<= 8;
+            joined |= low;
+
+            value = joined;
+        }
+    } encDec_14bit_t;
+
     public:
     MIDI() {}
     void handleUARTread(bool(*fptr)(uint8_t &data));
@@ -53,41 +200,54 @@ class MIDI
     void sendSongPosition(uint16_t inBeats);
     void sendSongSelect(uint8_t inSongNumber);
     void sendTuneRequest();
-    void sendRealTime(midiMessageType_t inType);
+    void sendRealTime(messageType_t inType);
     void setNoteOffMode(noteOffType_t type);
     void setRunningStatusState(bool state);
     bool getRunningStatusState();
     noteOffType_t getNoteOffMode();
     static uint8_t getOctaveFromNote(int8_t note);
     static note_t getTonicFromNote(int8_t note);
-    void send(midiMessageType_t inType, uint8_t inData1, uint8_t inData2, uint8_t inChannel);
-    bool read(midiInterfaceType_t type, midiFilterMode_t filterMode = THRU_OFF);
-    bool parse(midiInterfaceType_t type);
-    midiMessageType_t getType(midiInterfaceType_t type);
-    uint8_t getChannel(midiInterfaceType_t type);
-    uint8_t getData1(midiInterfaceType_t type);
-    uint8_t getData2(midiInterfaceType_t type);
-    uint8_t* getSysExArray(midiInterfaceType_t type);
-    uint16_t getSysExArrayLength(midiInterfaceType_t type);
+    void send(messageType_t inType, uint8_t inData1, uint8_t inData2, uint8_t inChannel);
+    bool read(interface_t type, filterMode_t filterMode = filterMode_t::off);
+    bool parse(interface_t type);
+    messageType_t getType(interface_t type);
+    uint8_t getChannel(interface_t type);
+    uint8_t getData1(interface_t type);
+    uint8_t getData2(interface_t type);
+    uint8_t* getSysExArray(interface_t type);
+    uint16_t getSysExArrayLength(interface_t type);
     uint8_t getInputChannel();
     bool setInputChannel(uint8_t inChannel);
-    midiMessageType_t getTypeFromStatusByte(uint8_t inStatus);
+    messageType_t getTypeFromStatusByte(uint8_t inStatus);
     uint8_t getChannelFromStatusByte(uint8_t inStatus);
-    bool isChannelMessage(midiMessageType_t inType);
+    bool isChannelMessage(messageType_t inType);
     void useRecursiveParsing(bool state);
     bool getRecursiveParseState();
 
     ///
+    /// \brief Holds decoded data of a MIDI message.
+    ///
+    typedef struct
+    {
+        uint8_t channel;                            ///< MIDI channel on which the message was received (1-16)
+        messageType_t type;                         ///< The type of the message
+        uint8_t data1;                              ///< First data byte (0-127)
+        uint8_t data2;                              ///< Second data byte (0-127, 0 if message length is 2 bytes)
+        uint8_t sysexArray[MIDI_SYSEX_ARRAY_SIZE];  ///< SysEx array buffer
+        bool valid;                                 ///< Message valid/invalid (validity means the message respects the MIDI norm)
+    } message_t;
+
+    ///
     /// \brief Decoded MIDI messages for USB and DIN interfaces.
     ///
-    MIDImessage_t       dinMessage,
-                        usbMessage;
+    message_t   dinMessage,
+                usbMessage;
 
     private:
-    void thruFilter(uint8_t inChannel, midiInterfaceType_t type, midiFilterMode_t filterMode);
-    bool inputFilter(uint8_t inChannel, midiInterfaceType_t type);
+    void thruFilter(uint8_t inChannel, interface_t type, filterMode_t filterMode);
+    bool inputFilter(uint8_t inChannel, interface_t type);
     void resetInput();
-    uint8_t getStatus(midiMessageType_t inType, uint8_t inChannel);
+    uint8_t getStatus(messageType_t inType, uint8_t inChannel);
 
     bool                useRunningStatus = false;
     bool                recursiveParseState = false;
@@ -103,7 +263,7 @@ class MIDI
     uint16_t            dinPendingMessageIndex;
     uint16_t            sysExArrayLength = 0;
 
-    noteOffType_t       noteOffMode = noteOffType_noteOnZeroVel;
+    noteOffType_t       noteOffMode = noteOffType_t::noteOnZeroVel;
 
     bool                (*sendUARTreadCallback)(uint8_t &data) = nullptr;
     bool                (*sendUARTwriteCallback)(uint8_t data) = nullptr;
@@ -112,5 +272,3 @@ class MIDI
 
     USBMIDIpacket_t     usbMIDIpacket;
 };
-
-/// @}
