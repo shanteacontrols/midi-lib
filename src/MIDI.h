@@ -181,7 +181,7 @@ class MIDI
     } encDec_14bit_t;
 
     public:
-    MIDI() {}
+    MIDI() = default;
     void           handleUARTread(bool (*fptr)(uint8_t& data));
     void           handleUARTwrite(bool (*fptr)(uint8_t data));
     void           handleUSBread(bool (*fptr)(USBMIDIpacket_t& USBMIDIpacket));

@@ -1178,7 +1178,7 @@ uint8_t* MIDI::getSysExArray(interface_t type)
         break;
     }
 
-    return 0;
+    return nullptr;
 }
 
 ///
@@ -1504,7 +1504,7 @@ MIDI::note_t MIDI::getTonicFromNote(int8_t note)
 ///
 void MIDI::setChannelSendZeroStart(bool state)
 {
-    zeroStartChannel = state ? 1 : 0;
+    zeroStartChannel = state ? true : false;
 }
 
 ///
