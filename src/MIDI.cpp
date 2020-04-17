@@ -931,7 +931,7 @@ bool MIDI::parse(interface_t type)
             //case static_cast<uint8_t>(messageType_t::sysCommonTimeCodeQuarterFrame):
             //case static_cast<uint8_t>(messageType_t::sysCommonSongSelect):
             usbMessage.type = static_cast<messageType_t>(usbMIDIpacket.Data1);
-            usbMessage.channel = (usbMIDIpacket.Data1 & 0x0F) + 1;
+            usbMessage.channel = getChannelFromStatusByte(usbMIDIpacket.Data1);
             usbMessage.data1 = usbMIDIpacket.Data2;
             usbMessage.data2 = 0;
             usbMessage.valid = true;
@@ -946,7 +946,7 @@ bool MIDI::parse(interface_t type)
         case static_cast<uint8_t>(messageType_t::afterTouchPoly):
         case static_cast<uint8_t>(messageType_t::sysCommonSongPosition):
             usbMessage.type = static_cast<messageType_t>(midiMessage);
-            usbMessage.channel = (usbMIDIpacket.Data1 & 0x0F) + 1;
+            usbMessage.channel = getChannelFromStatusByte(usbMIDIpacket.Data1);
             usbMessage.data1 = usbMIDIpacket.Data2;
             usbMessage.data2 = usbMIDIpacket.Data3;
             usbMessage.valid = true;
@@ -1103,17 +1103,14 @@ uint8_t MIDI::getChannel(interface_t type)
     switch (type)
     {
     case interface_t::din:
-        if (dinMessage.channel)
-            return dinMessage.channel - zeroStartChannel;
-        break;
+        return dinMessage.channel;
 
     case interface_t::usb:
-        if (usbMessage.channel)
-            return usbMessage.channel - zeroStartChannel;
-        break;
-    }
+        return usbMessage.channel;
 
-    return MIDI_CHANNEL_INVALID;
+    default:
+        return MIDI_CHANNEL_INVALID;
+    }
 }
 
 ///
