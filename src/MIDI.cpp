@@ -33,23 +33,23 @@
 ///
 void MIDI::send(messageType_t inType, uint8_t inData1, uint8_t inData2, uint8_t inChannel)
 {
-    bool validCheck = true;
+    bool channelValid = true;
 
     //test if channel is valid
     if (zeroStartChannel)
     {
         if (inChannel >= 16)
-            validCheck = false;
+            channelValid = false;
         else
             inChannel++;    //normalize channel
     }
     else
     {
         if ((inChannel > 16) || !inChannel)
-            validCheck = false;
+            channelValid = false;
     }
 
-    if (!validCheck || (inType < messageType_t::noteOff))
+    if (!channelValid || (inType < messageType_t::noteOff))
     {
         if (useRunningStatus)
             mRunningStatus_TX = static_cast<uint8_t>(messageType_t::invalid);
