@@ -1185,20 +1185,24 @@ uint8_t* MIDI::getSysExArray(interface_t type)
 ///
 uint16_t MIDI::getSysExArrayLength(interface_t type)
 {
-    uint16_t size = 0;
-
     switch (type)
     {
     case interface_t::din:
-        size = unsigned(dinMessage.data2) << 8 | dinMessage.data1;
-        break;
+    {
+        uint16_t size = unsigned(dinMessage.data2) << 8 | dinMessage.data1;
+        return size > MIDI_SYSEX_ARRAY_SIZE ? MIDI_SYSEX_ARRAY_SIZE : size;
+    }
+    break;
 
     case interface_t::usb:
-        return sysExArrayLength;
-        break;
+    {
+        return sysExArrayLength > MIDI_SYSEX_ARRAY_SIZE ? MIDI_SYSEX_ARRAY_SIZE : sysExArrayLength;
     }
+    break;
 
-    return size > MIDI_SYSEX_ARRAY_SIZE ? MIDI_SYSEX_ARRAY_SIZE : size;
+    default:
+        return 0;
+    }
 }
 
 ///
