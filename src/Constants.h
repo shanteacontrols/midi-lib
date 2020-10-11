@@ -1,6 +1,6 @@
 /*
     Copyright 2016 Francois Best
-    Copyright 2017-2018 Igor Petrovic
+    Copyright 2017-2020 Igor Petrovic
 
     Permission is hereby granted, free of charge, to any person obtaining
     a copy of this software and associated documentation files (the "Software"),
@@ -25,32 +25,32 @@
 ///
 /// \brief Value used to listen incoming MIDI messages on all channels.
 ///
-#define MIDI_CHANNEL_OMNI       17
+#define MIDI_CHANNEL_OMNI 17
 
 ///
 /// \brief Value used to turn the listening of incoming MIDI messages off.
 ///
-#define MIDI_CHANNEL_OFF        18
+#define MIDI_CHANNEL_OFF 18
 
 ///
 /// \brief Value used to signal the invalid MIDI channel.
 ///
-#define MIDI_CHANNEL_INVALID    255
+#define MIDI_CHANNEL_INVALID 255
 
 ///
 /// \brief Maximum 7-bit MIDI value.
 ///
-#define MIDI_7_BIT_VALUE_MAX    127
+#define MIDI_7_BIT_VALUE_MAX 127
 
 ///
 /// \brief Maximum 14-bit MIDI value.
 ///
-#define MIDI_14_BIT_VALUE_MAX   16383
+#define MIDI_14_BIT_VALUE_MAX 16383
 
 ///
 /// \brief Size of internal array in which SysEx message is being stored in bytes.
 /// To override define global symbol with the same name.
 ///
 #ifndef MIDI_SYSEX_ARRAY_SIZE
-#define MIDI_SYSEX_ARRAY_SIZE   45
+#define MIDI_SYSEX_ARRAY_SIZE 45
 #endif

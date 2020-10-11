@@ -1,6 +1,6 @@
 /*
     Copyright 2016 Francois Best
-    Copyright 2017-2019 Igor Petrovic
+    Copyright 2017-2020 Igor Petrovic
 
     Permission is hereby granted, free of charge, to any person obtaining
     a copy of this software and associated documentation files (the "Software"),
@@ -21,6 +21,25 @@
 */
 
 #include "MIDI.h"
+
+///
+/// \brief Extracts lower 7 bits from 14-bit value.
+/// \param [in] value   14-bit value.
+/// \returns    Lower 7 bits.
+///
+#define lowByte_7bit(value) ((value) & 0x7F)
+
+///
+/// \brief Extracts upper 7 bits from 14-bit value.
+/// \param [in] value   14-bit value.
+/// \returns    Upper 7 bits.
+///
+#define highByte_7bit(value) ((value >> 7) & 0x7f)
+
+bool MIDI::init()
+{
+    return hwa.init();
+}
 
 ///
 /// \brief Generate and send a MIDI message from the values given.
@@ -66,46 +85,40 @@ void MIDI::send(messageType_t inType, uint8_t inData1, uint8_t inData2, uint8_t 
 
         const uint8_t status = getStatus(inType, inChannel);
 
-        if (sendUARTwriteCallback != nullptr)
+        if (useRunningStatus)
         {
-            if (useRunningStatus)
+            if (mRunningStatus_TX != status)
             {
-                if (mRunningStatus_TX != status)
-                {
-                    //new message, memorize and send header
-                    mRunningStatus_TX = status;
-                    sendUARTwriteCallback(mRunningStatus_TX);
-                }
-            }
-            else
-            {
-                //don't care about running status, send the status byte
-                sendUARTwriteCallback(status);
-            }
-
-            //send data
-            sendUARTwriteCallback(inData1);
-
-            if ((inType != messageType_t::programChange) && (inType != messageType_t::afterTouchChannel))
-            {
-                sendUARTwriteCallback(inData2);
+                //new message, memorize and send header
+                mRunningStatus_TX = status;
+                dinWrite(mRunningStatus_TX);
             }
         }
-
-        if (sendUSBwriteCallback != nullptr)
+        else
         {
-            uint8_t event = static_cast<uint8_t>(inType) >> static_cast<uint8_t>(4);
-
-            USBMIDIpacket_t MIDIEvent = (USBMIDIpacket_t){
-                .Event = event,
-
-                .Data1 = status,
-                .Data2 = inData1,
-                .Data3 = inData2,
-            };
-
-            sendUSBwriteCallback(MIDIEvent);
+            //don't care about running status, send the status byte
+            dinWrite(status);
         }
+
+        //send data
+        dinWrite(inData1);
+
+        if ((inType != messageType_t::programChange) && (inType != messageType_t::afterTouchChannel))
+        {
+            dinWrite(inData2);
+        }
+
+        uint8_t event = static_cast<uint8_t>(inType) >> static_cast<uint8_t>(4);
+
+        USBMIDIpacket_t MIDIEvent = (USBMIDIpacket_t){
+            .Event = event,
+
+            .Data1 = status,
+            .Data2 = inData1,
+            .Data3 = inData2,
+        };
+
+        usbWrite(MIDIEvent);
     }
     else if (inType >= messageType_t::sysCommonTuneRequest && inType <= messageType_t::sysRealTimeSystemReset)
     {
@@ -204,233 +217,227 @@ void MIDI::sendPitchBend(uint16_t inPitchValue, uint8_t inChannel)
 ///
 void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayContainsBoundaries)
 {
-    if (sendUARTwriteCallback != nullptr)
+    if (!inArrayContainsBoundaries)
+        dinWrite(0xf0);
+
+    for (uint16_t i = 0; i < inLength; ++i)
+        dinWrite(inArray[i]);
+
+    if (!inArrayContainsBoundaries)
+        dinWrite(0xf7);
+
+    if (useRunningStatus)
+        mRunningStatus_TX = static_cast<uint8_t>(messageType_t::invalid);
+
+    USBMIDIpacket_t MIDIEvent;
+
+    if (!inArrayContainsBoundaries)
     {
-        if (!inArrayContainsBoundaries)
-            sendUARTwriteCallback(0xf0);
+        //append sysex start (0xF0) and stop (0xF7) bytes to array
+        bool firstByte = true;
+        bool startSent = false;
 
-        for (uint16_t i = 0; i < inLength; ++i)
-            sendUARTwriteCallback(inArray[i]);
-
-        if (!inArrayContainsBoundaries)
-            sendUARTwriteCallback(0xf7);
-
-        if (useRunningStatus)
-            mRunningStatus_TX = static_cast<uint8_t>(messageType_t::invalid);
-    }
-
-    if (sendUSBwriteCallback != nullptr)
-    {
-        USBMIDIpacket_t MIDIEvent;
-
-        if (!inArrayContainsBoundaries)
+        while (inLength > 3)
         {
-            //append sysex start (0xF0) and stop (0xF7) bytes to array
-            bool firstByte = true;
-            bool startSent = false;
-
-            while (inLength > 3)
-            {
-                if (firstByte)
-                {
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = GET_USB_MIDI_EVENT(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
-
-                        .Data1 = static_cast<uint8_t>(messageType_t::systemExclusive),
-                        .Data2 = inArray[0],
-                        .Data3 = inArray[1],
-                    };
-
-                    sendUSBwriteCallback(MIDIEvent);
-
-                    firstByte = false;
-                    startSent = true;
-                    inArray += 2;
-                    inLength -= 2;
-                }
-                else
-                {
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = GET_USB_MIDI_EVENT(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
-
-                        .Data1 = inArray[0],
-                        .Data2 = inArray[1],
-                        .Data3 = inArray[2],
-                    };
-
-                    sendUSBwriteCallback(MIDIEvent);
-
-                    inArray += 3;
-                    inLength -= 3;
-                }
-            }
-
-            if (inLength == 3)
-            {
-                if (startSent)
-                {
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = GET_USB_MIDI_EVENT(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
-
-                        .Data1 = inArray[0],
-                        .Data2 = inArray[1],
-                        .Data3 = inArray[2],
-                    };
-
-                    sendUSBwriteCallback(MIDIEvent);
-
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = GET_USB_MIDI_EVENT(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop1byteCin)),
-
-                        .Data1 = 0xF7,
-                        .Data2 = 0,
-                        .Data3 = 0,
-                    };
-
-                    sendUSBwriteCallback(MIDIEvent);
-                }
-                else
-                {
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = GET_USB_MIDI_EVENT(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
-
-                        .Data1 = static_cast<uint8_t>(messageType_t::systemExclusive),
-                        .Data2 = inArray[0],
-                        .Data3 = inArray[1],
-                    };
-
-                    sendUSBwriteCallback(MIDIEvent);
-
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = GET_USB_MIDI_EVENT(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop2byteCin)),
-
-                        .Data1 = inArray[2],
-                        .Data2 = 0xF7,
-                        .Data3 = 0,
-                    };
-
-                    sendUSBwriteCallback(MIDIEvent);
-                }
-            }
-            else if (inLength == 2)
-            {
-                if (startSent)
-                {
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = GET_USB_MIDI_EVENT(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop3byteCin)),
-
-                        .Data1 = inArray[0],
-                        .Data2 = inArray[1],
-                        .Data3 = 0xF7,
-                    };
-
-                    sendUSBwriteCallback(MIDIEvent);
-                }
-                else
-                {
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = GET_USB_MIDI_EVENT(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
-
-                        .Data1 = static_cast<uint8_t>(messageType_t::systemExclusive),
-                        .Data2 = inArray[0],
-                        .Data3 = inArray[1],
-                    };
-
-                    sendUSBwriteCallback(MIDIEvent);
-
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = GET_USB_MIDI_EVENT(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop1byteCin)),
-
-                        .Data1 = 0xF7,
-                        .Data2 = 0,
-                        .Data3 = 0,
-                    };
-
-                    sendUSBwriteCallback(MIDIEvent);
-                }
-            }
-            else if (inLength == 1)
-            {
-                if (startSent)
-                {
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = GET_USB_MIDI_EVENT(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop2byteCin)),
-
-                        .Data1 = inArray[0],
-                        .Data2 = 0xF7,
-                        .Data3 = 0,
-                    };
-
-                    sendUSBwriteCallback(MIDIEvent);
-                }
-                else
-                {
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = GET_USB_MIDI_EVENT(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop3byteCin)),
-
-                        .Data1 = 0xF0,
-                        .Data2 = inArray[0],
-                        .Data3 = 0xF7,
-                    };
-
-                    sendUSBwriteCallback(MIDIEvent);
-                }
-            }
-        }
-        else
-        {
-            while (inLength > 3)
+            if (firstByte)
             {
                 MIDIEvent = (USBMIDIpacket_t){
-                    .Event = GET_USB_MIDI_EVENT(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
+                    .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
+
+                    .Data1 = static_cast<uint8_t>(messageType_t::systemExclusive),
+                    .Data2 = inArray[0],
+                    .Data3 = inArray[1],
+                };
+
+                usbWrite(MIDIEvent);
+
+                firstByte = false;
+                startSent = true;
+                inArray += 2;
+                inLength -= 2;
+            }
+            else
+            {
+                MIDIEvent = (USBMIDIpacket_t){
+                    .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
 
                     .Data1 = inArray[0],
                     .Data2 = inArray[1],
                     .Data3 = inArray[2],
                 };
 
-                sendUSBwriteCallback(MIDIEvent);
+                usbWrite(MIDIEvent);
 
                 inArray += 3;
                 inLength -= 3;
             }
+        }
 
-            if (inLength == 3)
+        if (inLength == 3)
+        {
+            if (startSent)
             {
                 MIDIEvent = (USBMIDIpacket_t){
-                    .Event = GET_USB_MIDI_EVENT(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop3byteCin)),
+                    .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
 
                     .Data1 = inArray[0],
                     .Data2 = inArray[1],
                     .Data3 = inArray[2],
                 };
 
-                sendUSBwriteCallback(MIDIEvent);
-            }
-            else if (inLength == 2)
-            {
+                usbWrite(MIDIEvent);
+
                 MIDIEvent = (USBMIDIpacket_t){
-                    .Event = GET_USB_MIDI_EVENT(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop2byteCin)),
+                    .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop1byteCin)),
 
-                    .Data1 = inArray[0],
-                    .Data2 = inArray[1],
-                    .Data3 = 0,
-                };
-
-                sendUSBwriteCallback(MIDIEvent);
-            }
-            else if (inLength == 1)
-            {
-                MIDIEvent = (USBMIDIpacket_t){
-                    .Event = GET_USB_MIDI_EVENT(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop1byteCin)),
-
-                    .Data1 = inArray[0],
+                    .Data1 = 0xF7,
                     .Data2 = 0,
                     .Data3 = 0,
                 };
 
-                sendUSBwriteCallback(MIDIEvent);
+                usbWrite(MIDIEvent);
             }
+            else
+            {
+                MIDIEvent = (USBMIDIpacket_t){
+                    .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
+
+                    .Data1 = static_cast<uint8_t>(messageType_t::systemExclusive),
+                    .Data2 = inArray[0],
+                    .Data3 = inArray[1],
+                };
+
+                usbWrite(MIDIEvent);
+
+                MIDIEvent = (USBMIDIpacket_t){
+                    .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop2byteCin)),
+
+                    .Data1 = inArray[2],
+                    .Data2 = 0xF7,
+                    .Data3 = 0,
+                };
+
+                usbWrite(MIDIEvent);
+            }
+        }
+        else if (inLength == 2)
+        {
+            if (startSent)
+            {
+                MIDIEvent = (USBMIDIpacket_t){
+                    .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop3byteCin)),
+
+                    .Data1 = inArray[0],
+                    .Data2 = inArray[1],
+                    .Data3 = 0xF7,
+                };
+
+                usbWrite(MIDIEvent);
+            }
+            else
+            {
+                MIDIEvent = (USBMIDIpacket_t){
+                    .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
+
+                    .Data1 = static_cast<uint8_t>(messageType_t::systemExclusive),
+                    .Data2 = inArray[0],
+                    .Data3 = inArray[1],
+                };
+
+                usbWrite(MIDIEvent);
+
+                MIDIEvent = (USBMIDIpacket_t){
+                    .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop1byteCin)),
+
+                    .Data1 = 0xF7,
+                    .Data2 = 0,
+                    .Data3 = 0,
+                };
+
+                usbWrite(MIDIEvent);
+            }
+        }
+        else if (inLength == 1)
+        {
+            if (startSent)
+            {
+                MIDIEvent = (USBMIDIpacket_t){
+                    .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop2byteCin)),
+
+                    .Data1 = inArray[0],
+                    .Data2 = 0xF7,
+                    .Data3 = 0,
+                };
+
+                usbWrite(MIDIEvent);
+            }
+            else
+            {
+                MIDIEvent = (USBMIDIpacket_t){
+                    .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop3byteCin)),
+
+                    .Data1 = 0xF0,
+                    .Data2 = inArray[0],
+                    .Data3 = 0xF7,
+                };
+
+                usbWrite(MIDIEvent);
+            }
+        }
+    }
+    else
+    {
+        while (inLength > 3)
+        {
+            MIDIEvent = (USBMIDIpacket_t){
+                .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
+
+                .Data1 = inArray[0],
+                .Data2 = inArray[1],
+                .Data3 = inArray[2],
+            };
+
+            usbWrite(MIDIEvent);
+
+            inArray += 3;
+            inLength -= 3;
+        }
+
+        if (inLength == 3)
+        {
+            MIDIEvent = (USBMIDIpacket_t){
+                .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop3byteCin)),
+
+                .Data1 = inArray[0],
+                .Data2 = inArray[1],
+                .Data3 = inArray[2],
+            };
+
+            usbWrite(MIDIEvent);
+        }
+        else if (inLength == 2)
+        {
+            MIDIEvent = (USBMIDIpacket_t){
+                .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop2byteCin)),
+
+                .Data1 = inArray[0],
+                .Data2 = inArray[1],
+                .Data3 = 0,
+            };
+
+            usbWrite(MIDIEvent);
+        }
+        else if (inLength == 1)
+        {
+            MIDIEvent = (USBMIDIpacket_t){
+                .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop1byteCin)),
+
+                .Data1 = inArray[0],
+                .Data2 = 0,
+                .Data3 = 0,
+            };
+
+            usbWrite(MIDIEvent);
         }
     }
 }
@@ -442,13 +449,10 @@ void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayCont
 ///
 void MIDI::sendTuneRequest()
 {
-    if (sendUARTwriteCallback != nullptr)
-    {
-        sendUARTwriteCallback(static_cast<uint8_t>(messageType_t::sysCommonTuneRequest));
+    dinWrite(static_cast<uint8_t>(messageType_t::sysCommonTuneRequest));
 
-        if (useRunningStatus)
-            mRunningStatus_TX = static_cast<uint8_t>(messageType_t::invalid);
-    }
+    if (useRunningStatus)
+        mRunningStatus_TX = static_cast<uint8_t>(messageType_t::invalid);
 }
 
 ///
@@ -470,8 +474,8 @@ void MIDI::sendTimeCodeQuarterFrame(uint8_t inTypeNibble, uint8_t inValuesNibble
 ///
 void MIDI::sendTimeCodeQuarterFrame(uint8_t inData)
 {
-    sendUARTwriteCallback(static_cast<uint8_t>(messageType_t::sysCommonTimeCodeQuarterFrame));
-    sendUARTwriteCallback(inData);
+    dinWrite(static_cast<uint8_t>(messageType_t::sysCommonTimeCodeQuarterFrame));
+    dinWrite(inData);
 
     if (useRunningStatus)
         mRunningStatus_TX = static_cast<uint8_t>(messageType_t::invalid);
@@ -483,9 +487,9 @@ void MIDI::sendTimeCodeQuarterFrame(uint8_t inData)
 ///
 void MIDI::sendSongPosition(uint16_t inBeats)
 {
-    sendUARTwriteCallback(static_cast<uint8_t>(messageType_t::sysCommonSongPosition));
-    sendUARTwriteCallback(inBeats & 0x7f);
-    sendUARTwriteCallback((inBeats >> 7) & 0x7f);
+    dinWrite(static_cast<uint8_t>(messageType_t::sysCommonSongPosition));
+    dinWrite(inBeats & 0x7f);
+    dinWrite((inBeats >> 7) & 0x7f);
 
     if (useRunningStatus)
         mRunningStatus_TX = static_cast<uint8_t>(messageType_t::invalid);
@@ -497,8 +501,8 @@ void MIDI::sendSongPosition(uint16_t inBeats)
 ///
 void MIDI::sendSongSelect(uint8_t inSongNumber)
 {
-    sendUARTwriteCallback(static_cast<uint8_t>(messageType_t::sysCommonSongSelect));
-    sendUARTwriteCallback(inSongNumber & 0x7f);
+    dinWrite(static_cast<uint8_t>(messageType_t::sysCommonSongSelect));
+    dinWrite(inSongNumber & 0x7f);
 
     if (useRunningStatus)
         mRunningStatus_TX = static_cast<uint8_t>(messageType_t::invalid);
@@ -519,22 +523,19 @@ void MIDI::sendRealTime(messageType_t inType)
     case messageType_t::sysRealTimeContinue:
     case messageType_t::sysRealTimeActiveSensing:
     case messageType_t::sysRealTimeSystemReset:
-        if (sendUARTwriteCallback != nullptr)
-            sendUARTwriteCallback(static_cast<uint8_t>(inType));
+    {
+        dinWrite(static_cast<uint8_t>(inType));
+        USBMIDIpacket_t MIDIEvent = (USBMIDIpacket_t){
+            .Event = static_cast<uint8_t>(messageType_t::systemExclusive) >> 4,
 
-        if (sendUSBwriteCallback != nullptr)
-        {
-            USBMIDIpacket_t MIDIEvent = (USBMIDIpacket_t){
-                .Event = static_cast<uint8_t>(messageType_t::systemExclusive) >> 4,
+            .Data1 = static_cast<uint8_t>(inType),
+            .Data2 = 0x00,
+            .Data3 = 0x00,
+        };
 
-                .Data1 = static_cast<uint8_t>(inType),
-                .Data2 = 0x00,
-                .Data3 = 0x00,
-            };
-
-            sendUSBwriteCallback(MIDIEvent);
-        }
-        break;
+        usbWrite(MIDIEvent);
+    }
+    break;
 
     default:
         //invalid Real Time marker
@@ -588,19 +589,6 @@ bool MIDI::read(interface_t type, filterMode_t filterMode)
     if (mInputChannel == MIDI_CHANNEL_OFF)
         return false;    //MIDI Input disabled
 
-    switch (type)
-    {
-    case interface_t::usb:
-        if (sendUSBreadCallback == nullptr)
-            return false;
-        break;
-
-    case interface_t::din:
-        if (sendUARTreadCallback == nullptr)
-            return false;
-        break;
-    }
-
     if (!parse(type))
         return false;
 
@@ -618,12 +606,9 @@ bool MIDI::parse(interface_t type)
 {
     if (type == interface_t::din)
     {
-        if (sendUARTreadCallback == nullptr)
-            return false;
-
         uint8_t data = 0;
 
-        if (!sendUARTreadCallback(data))
+        if (!dinRead(data))
             return false;    //no data available
 
         const uint8_t extracted = data;
@@ -640,8 +625,8 @@ bool MIDI::parse(interface_t type)
                 //if the status byte is not received, prepend it to the pending message
                 if (extracted < 0x80)
                 {
-                    mPendingMessage[0] = mRunningStatus_RX;
-                    mPendingMessage[1] = extracted;
+                    mPendingMessage[0]     = mRunningStatus_RX;
+                    mPendingMessage[1]     = extracted;
                     dinPendingMessageIndex = 1;
                 }
 
@@ -660,31 +645,35 @@ bool MIDI::parse(interface_t type)
             case messageType_t::sysRealTimeActiveSensing:
             case messageType_t::sysRealTimeSystemReset:
             case messageType_t::sysCommonTuneRequest:
+            {
                 //handle the message type directly here.
-                dinMessage.type = getTypeFromStatusByte(mPendingMessage[0]);
+                dinMessage.type    = getTypeFromStatusByte(mPendingMessage[0]);
                 dinMessage.channel = 0;
-                dinMessage.data1 = 0;
-                dinMessage.data2 = 0;
-                dinMessage.valid = true;
+                dinMessage.data1   = 0;
+                dinMessage.data2   = 0;
+                dinMessage.valid   = true;
 
                 // \fix Running Status broken when receiving Clock messages.
                 // Do not reset all input attributes, Running Status must remain unchanged.
                 //resetInput();
 
                 //we still need to reset these
-                dinPendingMessageIndex = 0;
+                dinPendingMessageIndex          = 0;
                 dinPendingMessageExpectedLenght = 0;
 
                 return true;
-                break;
+            }
+            break;
 
             //2 bytes messages
             case messageType_t::programChange:
             case messageType_t::afterTouchChannel:
             case messageType_t::sysCommonTimeCodeQuarterFrame:
             case messageType_t::sysCommonSongSelect:
+            {
                 dinPendingMessageExpectedLenght = 2;
-                break;
+            }
+            break;
 
             //3 bytes messages
             case messageType_t::noteOn:
@@ -693,31 +682,37 @@ bool MIDI::parse(interface_t type)
             case messageType_t::pitchBend:
             case messageType_t::afterTouchPoly:
             case messageType_t::sysCommonSongPosition:
+            {
                 dinPendingMessageExpectedLenght = 3;
-                break;
+            }
+            break;
 
             case messageType_t::systemExclusive:
+            {
                 //the message can be any length between 3 and MIDI_SYSEX_ARRAY_SIZE
                 dinPendingMessageExpectedLenght = MIDI_SYSEX_ARRAY_SIZE;
-                mRunningStatus_RX = static_cast<uint8_t>(messageType_t::invalid);
-                dinMessage.sysexArray[0] = static_cast<uint8_t>(messageType_t::systemExclusive);
-                break;
+                mRunningStatus_RX               = static_cast<uint8_t>(messageType_t::invalid);
+                dinMessage.sysexArray[0]        = static_cast<uint8_t>(messageType_t::systemExclusive);
+            }
+            break;
 
             case messageType_t::invalid:
             default:
+            {
                 //this is obviously wrong
                 //let's get the hell out'a here
                 resetInput();
                 return false;
-                break;
+            }
+            break;
             }
 
             if (dinPendingMessageIndex >= (dinPendingMessageExpectedLenght - 1))
             {
                 //reception complete
-                dinMessage.type = getTypeFromStatusByte(mPendingMessage[0]);
+                dinMessage.type    = getTypeFromStatusByte(mPendingMessage[0]);
                 dinMessage.channel = getChannelFromStatusByte(mPendingMessage[0]);
-                dinMessage.data1 = mPendingMessage[1];
+                dinMessage.data1   = mPendingMessage[1];
 
                 //save data2 only if applicable
                 if (dinPendingMessageExpectedLenght == 3)
@@ -725,9 +720,9 @@ bool MIDI::parse(interface_t type)
                 else
                     dinMessage.data2 = 0;
 
-                dinPendingMessageIndex = 0;
+                dinPendingMessageIndex          = 0;
                 dinPendingMessageExpectedLenght = 0;
-                dinMessage.valid = true;
+                dinMessage.valid                = true;
                 return true;
             }
             else
@@ -763,33 +758,36 @@ bool MIDI::parse(interface_t type)
                 case static_cast<uint8_t>(messageType_t::sysRealTimeStop):
                 case static_cast<uint8_t>(messageType_t::sysRealTimeActiveSensing):
                 case static_cast<uint8_t>(messageType_t::sysRealTimeSystemReset):
+                {
                     //here we will have to extract the one-byte message,
                     //pass it to the structure for being read outside
                     //the MIDI class, and recompose the message it was
                     //interleaved into without killing the running status..
                     //this is done by leaving the pending message as is,
                     //it will be completed on next calls
-                    dinMessage.type = static_cast<messageType_t>(extracted);
-                    dinMessage.data1 = 0;
-                    dinMessage.data2 = 0;
+                    dinMessage.type    = static_cast<messageType_t>(extracted);
+                    dinMessage.data1   = 0;
+                    dinMessage.data2   = 0;
                     dinMessage.channel = 0;
-                    dinMessage.valid = true;
+                    dinMessage.valid   = true;
                     return true;
-                    break;
+                }
+                break;
 
                 //end of sysex
                 case 0xF7:
+                {
                     if (dinMessage.sysexArray[0] == static_cast<uint8_t>(messageType_t::systemExclusive))
                     {
                         //store the last byte (EOX)
                         dinMessage.sysexArray[dinPendingMessageIndex++] = 0xf7;
-                        dinMessage.type = messageType_t::systemExclusive;
+                        dinMessage.type                                 = messageType_t::systemExclusive;
 
                         //get length
-                        dinMessage.data1 = dinPendingMessageIndex & 0xff;    //LSB
-                        dinMessage.data2 = dinPendingMessageIndex >> 8;      //MSB
+                        dinMessage.data1   = dinPendingMessageIndex & 0xff;    //LSB
+                        dinMessage.data2   = dinPendingMessageIndex >> 8;      //MSB
                         dinMessage.channel = 0;
-                        dinMessage.valid = true;
+                        dinMessage.valid   = true;
 
                         resetInput();
                         return true;
@@ -800,7 +798,8 @@ bool MIDI::parse(interface_t type)
                         resetInput();
                         return false;
                     }
-                    break;
+                }
+                break;
 
                 default:
                     break;
@@ -841,7 +840,7 @@ bool MIDI::parse(interface_t type)
                     dinMessage.data2 = 0;
 
                 //reset local variables
-                dinPendingMessageIndex = 0;
+                dinPendingMessageIndex          = 0;
                 dinPendingMessageExpectedLenght = 0;
 
                 dinMessage.valid = true;
@@ -882,7 +881,7 @@ bool MIDI::parse(interface_t type)
     }
     else if (type == interface_t::usb)
     {
-        if (!sendUSBreadCallback(usbMIDIpacket))
+        if (!usbRead(usbMIDIpacket))
             return false;    //nothing received
 
         //we already have entire message here
@@ -895,6 +894,7 @@ bool MIDI::parse(interface_t type)
         //1 byte messages
         case static_cast<uint8_t>(usbMIDIsystemCin_t::sysCommon1byteCin):
         case static_cast<uint8_t>(usbMIDIsystemCin_t::singleByte):
+        {
             if (usbMIDIpacket.Data1 != 0xF7)
             {
                 //this isn't end of sysex, it's 1byte system common message
@@ -905,11 +905,11 @@ bool MIDI::parse(interface_t type)
                 //case messageType_t::sysRealTimeStop:
                 //case messageType_t::sysRealTimeActiveSensing:
                 //case messageType_t::sysRealTimeSystemReset:
-                usbMessage.type = static_cast<messageType_t>(usbMIDIpacket.Data1);
+                usbMessage.type    = static_cast<messageType_t>(usbMIDIpacket.Data1);
                 usbMessage.channel = 0;
-                usbMessage.data1 = 0;
-                usbMessage.data2 = 0;
-                usbMessage.valid = true;
+                usbMessage.data1   = 0;
+                usbMessage.data2   = 0;
+                usbMessage.valid   = true;
                 return true;
             }
             else
@@ -917,26 +917,29 @@ bool MIDI::parse(interface_t type)
                 //end of sysex
                 usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket.Data1;
                 sysExArrayLength++;
-                usbMessage.type = messageType_t::systemExclusive;
+                usbMessage.type    = messageType_t::systemExclusive;
                 usbMessage.channel = 0;
-                usbMessage.valid = true;
+                usbMessage.valid   = true;
                 return true;
             }
-            break;
+        }
+        break;
 
         //2 byte messages
         case static_cast<uint8_t>(usbMIDIsystemCin_t::sysCommon2byteCin):
         case static_cast<uint8_t>(messageType_t::programChange):
+        {
             //case static_cast<uint8_t>(messageType_t::afterTouchChannel):
             //case static_cast<uint8_t>(messageType_t::sysCommonTimeCodeQuarterFrame):
             //case static_cast<uint8_t>(messageType_t::sysCommonSongSelect):
-            usbMessage.type = static_cast<messageType_t>(usbMIDIpacket.Data1);
+            usbMessage.type    = static_cast<messageType_t>(usbMIDIpacket.Data1);
             usbMessage.channel = getChannelFromStatusByte(usbMIDIpacket.Data1);
-            usbMessage.data1 = usbMIDIpacket.Data2;
-            usbMessage.data2 = 0;
-            usbMessage.valid = true;
+            usbMessage.data1   = usbMIDIpacket.Data2;
+            usbMessage.data2   = 0;
+            usbMessage.valid   = true;
             return true;
-            break;
+        }
+        break;
 
         //3 byte messages
         case static_cast<uint8_t>(messageType_t::noteOn):
@@ -945,16 +948,19 @@ bool MIDI::parse(interface_t type)
         case static_cast<uint8_t>(messageType_t::pitchBend):
         case static_cast<uint8_t>(messageType_t::afterTouchPoly):
         case static_cast<uint8_t>(messageType_t::sysCommonSongPosition):
-            usbMessage.type = static_cast<messageType_t>(midiMessage);
+        {
+            usbMessage.type    = static_cast<messageType_t>(midiMessage);
             usbMessage.channel = getChannelFromStatusByte(usbMIDIpacket.Data1);
-            usbMessage.data1 = usbMIDIpacket.Data2;
-            usbMessage.data2 = usbMIDIpacket.Data3;
-            usbMessage.valid = true;
+            usbMessage.data1   = usbMIDIpacket.Data2;
+            usbMessage.data2   = usbMIDIpacket.Data3;
+            usbMessage.valid   = true;
             return true;
-            break;
+        }
+        break;
 
         //sysex
         case static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin):
+        {
             //the message can be any length between 3 and MIDI_SYSEX_ARRAY_SIZE
             if (usbMIDIpacket.Data1 == 0xF0)
                 sysExArrayLength = 0;    //this is a new sysex message, reset length
@@ -966,37 +972,42 @@ bool MIDI::parse(interface_t type)
             usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket.Data3;
             sysExArrayLength++;
             return false;
-            break;
+        }
+        break;
 
         case static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop2byteCin):
+        {
             usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket.Data1;
             sysExArrayLength++;
             usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket.Data2;
             sysExArrayLength++;
-            usbMessage.type = messageType_t::systemExclusive;
+            usbMessage.type    = messageType_t::systemExclusive;
             usbMessage.channel = 0;
-            usbMessage.valid = true;
+            usbMessage.valid   = true;
             return true;
-            break;
+        }
+        break;
 
         case static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop3byteCin):
+        {
             if (usbMIDIpacket.Data1 == 0xF0)
                 sysExArrayLength = 0;    //sysex message with 1 byte of payload
+
             usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket.Data1;
             sysExArrayLength++;
             usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket.Data2;
             sysExArrayLength++;
             usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket.Data3;
             sysExArrayLength++;
-            usbMessage.type = messageType_t::systemExclusive;
+            usbMessage.type    = messageType_t::systemExclusive;
             usbMessage.channel = 0;
-            usbMessage.valid = true;
+            usbMessage.valid   = true;
             return true;
-            break;
+        }
+        break;
 
         default:
             return false;
-            break;
         }
     }
     else
@@ -1066,9 +1077,9 @@ bool MIDI::inputFilter(uint8_t inChannel, interface_t type)
 ///
 void MIDI::resetInput()
 {
-    dinPendingMessageIndex = 0;
+    dinPendingMessageIndex          = 0;
     dinPendingMessageExpectedLenght = 0;
-    mRunningStatus_RX = static_cast<uint8_t>(messageType_t::invalid);
+    mRunningStatus_RX               = static_cast<uint8_t>(messageType_t::invalid);
 }
 
 ///
@@ -1083,14 +1094,13 @@ MIDI::messageType_t MIDI::getType(interface_t type)
     {
     case interface_t::din:
         return dinMessage.type;
-        break;
 
     case interface_t::usb:
         return usbMessage.type;
-        break;
-    }
 
-    return messageType_t::invalid;
+    default:
+        return messageType_t::invalid;
+    }
 }
 
 ///
@@ -1124,11 +1134,9 @@ uint8_t MIDI::getData1(interface_t type)
     {
     case interface_t::din:
         return dinMessage.data1;
-        break;
 
     case interface_t::usb:
         return usbMessage.data1;
-        break;
 
     default:
         return 0;
@@ -1146,14 +1154,13 @@ uint8_t MIDI::getData2(interface_t type)
     {
     case interface_t::din:
         return dinMessage.data2;
-        break;
 
     case interface_t::usb:
         return usbMessage.data2;
-        break;
-    }
 
-    return 0;
+    default:
+        return 0;
+    }
 }
 
 ///
@@ -1168,14 +1175,13 @@ uint8_t* MIDI::getSysExArray(interface_t type)
     {
     case interface_t::din:
         return dinMessage.sysexArray;
-        break;
 
     case interface_t::usb:
         return usbMessage.sysexArray;
-        break;
-    }
 
-    return nullptr;
+    default:
+        return nullptr;
+    }
 }
 
 ///
@@ -1329,15 +1335,6 @@ void MIDI::useRecursiveParsing(bool state)
 }
 
 ///
-/// \brief Checks current status of recursive parsing for incoming UART messages.
-/// \returns True if recursive parsing is enabled, false otherwise.
-///
-bool MIDI::getRecursiveParseState()
-{
-    return recursiveParseState;
-}
-
-///
 /// \brief Responsible for MIDI Thru message forwarding.
 ///
 /// This method is called upon reception of a message and takes
@@ -1354,23 +1351,21 @@ void MIDI::thruFilter(uint8_t inChannel, interface_t type, filterMode_t filterMo
     if (filterMode == filterMode_t::off)
         return;
 
-    message_t* msg;
-    msg = type == interface_t::din ? &dinMessage : &usbMessage;
+    message_t& msg = type == interface_t::din ? dinMessage : usbMessage;
 
-    //save pointers to temp variable
-    bool (*sendUARTwriteCallback_temp)(uint8_t data) = sendUARTwriteCallback;
-    bool (*sendUSBwriteCallback_temp)(USBMIDIpacket_t & USBMIDIpacket) = sendUSBwriteCallback;
+    bool dinState = dinEnabled;
+    bool usbState = usbEnabled;
 
     switch (filterMode)
     {
     case filterMode_t::fullDIN:
     case filterMode_t::channelDIN:
-        sendUSBwriteCallback = nullptr;
+        usbEnabled = false;
         break;
 
     case filterMode_t::fullUSB:
     case filterMode_t::channelUSB:
-        sendUARTwriteCallback = nullptr;
+        dinEnabled = false;
         break;
 
     case filterMode_t::fullAll:
@@ -1383,9 +1378,9 @@ void MIDI::thruFilter(uint8_t inChannel, interface_t type, filterMode_t filterMo
     }
 
     //first, check if the received message is Channel
-    if ((*msg).type >= messageType_t::noteOff && (*msg).type <= messageType_t::pitchBend)
+    if (msg.type >= messageType_t::noteOff && msg.type <= messageType_t::pitchBend)
     {
-        const bool filter_condition = (((*msg).channel == mInputChannel) ||
+        const bool filter_condition = ((msg.channel == mInputChannel) ||
                                        (mInputChannel == MIDI_CHANNEL_OMNI));
 
         //now let's pass it to the output
@@ -1394,14 +1389,14 @@ void MIDI::thruFilter(uint8_t inChannel, interface_t type, filterMode_t filterMo
         case filterMode_t::fullDIN:
         case filterMode_t::fullUSB:
         case filterMode_t::fullAll:
-            send((*msg).type, (*msg).data1, (*msg).data2, (*msg).channel);
+            send(msg.type, msg.data1, msg.data2, msg.channel);
             break;
 
         case filterMode_t::channelDIN:
         case filterMode_t::channelUSB:
         case filterMode_t::channelAll:
             if (filter_condition)
-                send((*msg).type, (*msg).data1, (*msg).data2, (*msg).channel);
+                send(msg.type, msg.data1, msg.data2, msg.channel);
             break;
 
         default:
@@ -1411,7 +1406,7 @@ void MIDI::thruFilter(uint8_t inChannel, interface_t type, filterMode_t filterMo
     else
     {
         //always forward system messages
-        switch ((*msg).type)
+        switch (msg.type)
         {
         //real Time and 1 byte
         case messageType_t::sysRealTimeClock:
@@ -1421,7 +1416,7 @@ void MIDI::thruFilter(uint8_t inChannel, interface_t type, filterMode_t filterMo
         case messageType_t::sysRealTimeActiveSensing:
         case messageType_t::sysRealTimeSystemReset:
         case messageType_t::sysCommonTuneRequest:
-            sendRealTime((*msg).type);
+            sendRealTime(msg.type);
             break;
 
         case messageType_t::systemExclusive:
@@ -1430,15 +1425,15 @@ void MIDI::thruFilter(uint8_t inChannel, interface_t type, filterMode_t filterMo
             break;
 
         case messageType_t::sysCommonSongSelect:
-            sendSongSelect((*msg).data1);
+            sendSongSelect(msg.data1);
             break;
 
         case messageType_t::sysCommonSongPosition:
-            sendSongPosition((*msg).data1 | ((unsigned)(*msg).data2 << 7));
+            sendSongPosition(msg.data1 | ((unsigned)msg.data2 << 7));
             break;
 
         case messageType_t::sysCommonTimeCodeQuarterFrame:
-            sendTimeCodeQuarterFrame((*msg).data1, (*msg).data2);
+            sendTimeCodeQuarterFrame(msg.data1, msg.data2);
             break;
 
         default:
@@ -1446,9 +1441,9 @@ void MIDI::thruFilter(uint8_t inChannel, interface_t type, filterMode_t filterMo
         }
     }
 
-    //restore pointers
-    sendUARTwriteCallback = sendUARTwriteCallback_temp;
-    sendUSBwriteCallback = sendUSBwriteCallback_temp;
+    //restore original state
+    dinEnabled = dinState;
+    usbEnabled = usbState;
 }
 
 ///
@@ -1508,48 +1503,54 @@ void MIDI::setChannelSendZeroStart(bool state)
     zeroStartChannel = state ? true : false;
 }
 
-///
-/// \brief Used to configure function which reads data from UART.
-///
-/// \param fptr [in]    Pointer to function.
-///
-void MIDI::handleUARTread(bool (*fptr)(uint8_t& data))
+void MIDI::disableDINMIDI()
 {
-    sendUARTreadCallback = fptr;
+    dinEnabled = false;
 }
 
-///
-/// \brief Used to configure function which writes data to UART.
-///
-/// \param fptr [in]    Pointer to function.
-///
-void MIDI::handleUARTwrite(bool (*fptr)(uint8_t data))
+void MIDI::enableDINMIDI()
 {
-    sendUARTwriteCallback = fptr;
+    dinEnabled = true;
 }
 
-///
-/// \brief Used to configure function which reads data from USB.
-///
-/// Handler function receives pointer to USBMIDIpacket_t structure.
-/// Elements of that structure must be filled with correct data.
-/// If there is nothing to read, false should be returned, or true otherwise.
-/// \param fptr [in]    Pointer to function.
-///
-void MIDI::handleUSBread(bool (*fptr)(USBMIDIpacket_t& USBMIDIpacket))
+void MIDI::disableUSBMIDI()
 {
-    sendUSBreadCallback = fptr;
+    usbEnabled = false;
 }
 
-///
-/// \brief Used to configure function which writes data to USB.
-///
-/// Handler function receives pointer to USBMIDIpacket_t structure.
-/// Elements of that structure must be sent to USB interface.
-/// If writing has failed, false must be returned, or true otherwise.
-/// \param fptr [in]    Pointer to function.
-///
-void MIDI::handleUSBwrite(bool (*fptr)(USBMIDIpacket_t& USBMIDIpacket))
+void MIDI::enableUSBMIDI()
 {
-    sendUSBwriteCallback = fptr;
+    usbEnabled = true;
+}
+
+bool MIDI::dinWrite(uint8_t data)
+{
+    if (!dinEnabled)
+        return false;
+
+    return hwa.dinWrite(data);
+}
+
+bool MIDI::dinRead(uint8_t& data)
+{
+    if (!dinEnabled)
+        return false;
+
+    return hwa.dinRead(data);
+}
+
+bool MIDI::usbWrite(USBMIDIpacket_t& USBMIDIpacket)
+{
+    if (!usbEnabled)
+        return false;
+
+    return hwa.usbWrite(USBMIDIpacket);
+}
+
+bool MIDI::usbRead(USBMIDIpacket_t& USBMIDIpacket)
+{
+    if (!usbEnabled)
+        return false;
+
+    return hwa.usbRead(USBMIDIpacket);
 }
