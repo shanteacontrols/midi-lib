@@ -140,7 +140,7 @@ class MIDI
     ///
     /// \brief Structure used to convert two 7-bit values to single 14-bit value and vice versa.
     ///
-    typedef struct
+    struct encDec_14bit_t
     {
         uint8_t  high;
         uint8_t  low;
@@ -178,7 +178,7 @@ class MIDI
 
             value = joined;
         }
-    } encDec_14bit_t;
+    };
 
     class HWA
     {
