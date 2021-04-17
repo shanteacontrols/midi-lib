@@ -137,17 +137,17 @@ class MIDI
         sysExStop3byteCin = 0x70
     };
 
-    ///
-    /// \brief Structure used to convert two 7-bit values to single 14-bit value and vice versa.
-    ///
-    struct encDec_14bit_t
+    //split 14bit value into higher and lower byte
+    class Split14bit
     {
-        uint8_t  high;
-        uint8_t  low;
-        uint16_t value;
+        public:
+        Split14bit()
+        {}
 
-        void split14bit()
+        void split(uint16_t value)
         {
+            value &= 0x3FFF;
+
             uint8_t newHigh = (value >> 8) & 0xFF;
             uint8_t newLow  = value & 0xFF;
             newHigh         = (newHigh << 1) & 0x7F;
@@ -158,11 +158,34 @@ class MIDI
                 newHigh &= ~0x01;
 
             newLow &= 0x7F;
-            high = newHigh;
-            low  = newLow;
+
+            _high = newHigh;
+            _low  = newLow;
         }
 
-        void mergeTo14bit()
+        uint8_t high() const
+        {
+            return _high;
+        }
+
+        uint8_t low() const
+        {
+            return _low;
+        }
+
+        private:
+        uint8_t _high = 0;
+        uint8_t _low  = 0;
+    };
+
+    //create 14bit value from higher and lower byte
+    class Merge14bit
+    {
+        public:
+        Merge14bit()
+        {}
+
+        void merge(uint8_t high, uint8_t low)
         {
             if (high & 0x01)
                 low |= (1 << 7);
@@ -176,8 +199,16 @@ class MIDI
             joined <<= 8;
             joined |= low;
 
-            value = joined;
+            _value = joined;
         }
+
+        uint16_t value() const
+        {
+            return _value;
+        }
+
+        private:
+        uint16_t _value;
     };
 
     class HWA
