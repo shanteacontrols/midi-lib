@@ -252,7 +252,7 @@ class MIDI
     void           sendPitchBend(uint16_t inPitchValue, uint8_t inChannel);
     void           sendAfterTouch(uint8_t inPressure, uint8_t inChannel, uint8_t inNoteNumber);
     void           sendAfterTouch(uint8_t inPressure, uint8_t inChannel);
-    void           sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayContainsBoundaries);
+    void           sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayContainsBoundaries, interface_t interface = interface_t::all);
     void           sendTimeCodeQuarterFrame(uint8_t inTypeNibble, uint8_t inValuesNibble);
     void           sendTimeCodeQuarterFrame(uint8_t inData);
     void           sendSongPosition(uint16_t inBeats);
