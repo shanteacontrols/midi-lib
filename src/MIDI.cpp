@@ -27,7 +27,7 @@
 /// \param [in] value   14-bit value.
 /// \returns    Lower 7 bits.
 ///
-#define lowByte_7bit(value) ((value) & 0x7F)
+#define lowByte_7bit(value) ((value)&0x7F)
 
 ///
 /// \brief Extracts upper 7 bits from 14-bit value.
