@@ -60,7 +60,8 @@ class MIDI
     enum class interface_t : uint8_t
     {
         din,
-        usb
+        usb,
+        all
     };
 
     ///
@@ -216,7 +217,8 @@ class MIDI
         public:
         HWA() = default;
 
-        virtual bool init()                                   = 0;
+        virtual bool init(interface_t interface)              = 0;
+        virtual bool deInit(interface_t interface)            = 0;
         virtual bool dinRead(uint8_t& data)                   = 0;
         virtual bool dinWrite(uint8_t data)                   = 0;
         virtual bool usbRead(USBMIDIpacket_t& USBMIDIpacket)  = 0;
@@ -240,7 +242,8 @@ class MIDI
         : hwa(hwa)
     {}
 
-    bool           init();
+    bool           init(interface_t interface);
+    bool           deInit(interface_t interface);
     void           setChannelSendZeroStart(bool state);
     void           sendNoteOn(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel);
     void           sendNoteOff(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel);
@@ -277,10 +280,6 @@ class MIDI
     uint8_t        getChannelFromStatusByte(uint8_t inStatus);
     bool           isChannelMessage(messageType_t inType);
     void           useRecursiveParsing(bool state);
-    void           disableDINMIDI();
-    void           enableDINMIDI();
-    void           disableUSBMIDI();
-    void           enableUSBMIDI();
 
     private:
     HWA& hwa;

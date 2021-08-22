@@ -36,9 +36,51 @@
 ///
 #define highByte_7bit(value) ((value >> 7) & 0x7f)
 
-bool MIDI::init()
+bool MIDI::init(interface_t interface)
 {
-    return hwa.init();
+    if (hwa.init(interface))
+    {
+        switch (interface)
+        {
+        case interface_t::din:
+            dinEnabled = true;
+            break;
+
+        case interface_t::usb:
+            usbEnabled = true;
+            break;
+
+        default:
+            dinEnabled = true;
+            usbEnabled = true;
+            break;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+bool MIDI::deInit(interface_t interface)
+{
+    switch (interface)
+    {
+    case interface_t::din:
+        dinEnabled = false;
+        break;
+
+    case interface_t::usb:
+        usbEnabled = false;
+        break;
+
+    default:
+        dinEnabled = false;
+        usbEnabled = false;
+        break;
+    }
+
+    return hwa.deInit(interface);
 }
 
 ///
@@ -1501,26 +1543,6 @@ MIDI::note_t MIDI::getTonicFromNote(int8_t note)
 void MIDI::setChannelSendZeroStart(bool state)
 {
     zeroStartChannel = state ? true : false;
-}
-
-void MIDI::disableDINMIDI()
-{
-    dinEnabled = false;
-}
-
-void MIDI::enableDINMIDI()
-{
-    dinEnabled = true;
-}
-
-void MIDI::disableUSBMIDI()
-{
-    usbEnabled = false;
-}
-
-void MIDI::enableUSBMIDI()
-{
-    usbEnabled = true;
 }
 
 bool MIDI::dinWrite(uint8_t data)
