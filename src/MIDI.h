@@ -23,7 +23,14 @@
 #pragma once
 
 #include <inttypes.h>
-#include "Constants.h"
+
+///
+/// \brief Size of internal array in which SysEx message is being stored in bytes.
+/// To override define global symbol with the same name.
+///
+#ifndef MIDI_SYSEX_ARRAY_SIZE
+#define MIDI_SYSEX_ARRAY_SIZE 45
+#endif
 
 class MIDI
 {
@@ -224,6 +231,31 @@ class MIDI
         virtual bool usbRead(USBMIDIpacket_t& USBMIDIpacket)  = 0;
         virtual bool usbWrite(USBMIDIpacket_t& USBMIDIpacket) = 0;
     };
+
+    ///
+    /// \brief Value used to listen incoming MIDI messages on all channels.
+    ///
+    static constexpr uint8_t MIDI_CHANNEL_OMNI = 17;
+
+    ///
+    /// \brief Value used to turn the listening of incoming MIDI messages off.
+    ///
+    static constexpr uint8_t MIDI_CHANNEL_OFF = 18;
+
+    ///
+    /// \brief Value used to signal the invalid MIDI channel.
+    ///
+    static constexpr uint8_t MIDI_CHANNEL_INVALID = 255;
+
+    ///
+    /// \brief Maximum 7-bit MIDI value.
+    ///
+    static constexpr uint8_t MIDI_7_BIT_VALUE_MAX = 127;
+
+    ///
+    /// \brief Maximum 14-bit MIDI value.
+    ///
+    static constexpr uint16_t MIDI_14_BIT_VALUE_MAX = 16383;
 
     ///
     /// \brief Constructs a USB MIDI event ID from a given MIDI command and a virtual MIDI cable index.
