@@ -1,0 +1,10 @@
+build/
+.DS_Store
+Documentation/*
+*compile_commands.json
+*ipch*
+*Objects.mk
+*.cortex-debug*
+*.profraw
+**/.clangd/*
+**/clangd/*
