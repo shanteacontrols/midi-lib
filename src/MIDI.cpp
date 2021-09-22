@@ -594,6 +594,32 @@ void MIDI::sendRealTime(messageType_t inType)
 }
 
 ///
+/// \brief Sends transport control messages.
+/// Based on MIDI specification for transport control.
+///
+void MIDI::sendMMC(uint8_t deviceID, messageType_t mmc)
+{
+    switch (mmc)
+    {
+    case messageType_t::mmcPlay:
+    case messageType_t::mmcStop:
+    case messageType_t::mmcPause:
+    case messageType_t::mmcRecordStart:
+    case messageType_t::mmcRecordStop:
+        break;
+
+    default:
+        return;
+    }
+
+    uint8_t mmcArray[6] = { 0xF0, 0x7F, 0x7F, 0x06, 0x00, 0xF7 };
+    mmcArray[2]         = deviceID;
+    mmcArray[4]         = static_cast<uint8_t>(mmc);
+
+    sendSysEx(6, mmcArray, true);
+}
+
+///
 /// \brief Enable or disable running status.
 ///
 /// Applies to DIN MIDI only (outgoing messages).

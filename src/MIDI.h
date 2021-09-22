@@ -58,7 +58,12 @@ class MIDI
         sysRealTimeStop               = 0xFC,    ///< System Real Time - Stop
         sysRealTimeActiveSensing      = 0xFE,    ///< System Real Time - Active Sensing
         sysRealTimeSystemReset        = 0xFF,    ///< System Real Time - System Reset
-        invalid                       = 0x00     ///< For notifying errors
+        mmcPlay                       = 0x02,
+        mmcStop                       = 0x01,
+        mmcPause                      = 0x09,
+        mmcRecordStart                = 0x06,
+        mmcRecordStop                 = 0x07,
+        invalid                       = 0x00    ///< For notifying errors
     };
 
     ///
@@ -291,6 +296,7 @@ class MIDI
     void           sendSongSelect(uint8_t inSongNumber);
     void           sendTuneRequest();
     void           sendRealTime(messageType_t inType);
+    void           sendMMC(uint8_t deviceID, messageType_t mmc);
     void           setNoteOffMode(noteOffType_t type);
     void           setRunningStatusState(bool state);
     bool           getRunningStatusState();
