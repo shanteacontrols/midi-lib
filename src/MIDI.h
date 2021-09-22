@@ -63,6 +63,9 @@ class MIDI
         mmcPause                      = 0x09,
         mmcRecordStart                = 0x06,
         mmcRecordStop                 = 0x07,
+        nrpn7bit                      = 0x99,
+        nrpn14bit                     = 0x38,
+        controlChange14bit            = 0x32,
         invalid                       = 0x00    ///< For notifying errors
     };
 
@@ -286,6 +289,7 @@ class MIDI
     void           sendNoteOff(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel);
     void           sendProgramChange(uint8_t inProgramNumber, uint8_t inChannel);
     void           sendControlChange(uint8_t inControlNumber, uint8_t inControlValue, uint8_t inChannel);
+    void           sendControlChange14bit(uint16_t inControlNumber, uint16_t inControlValue, uint8_t inChannel);
     void           sendPitchBend(uint16_t inPitchValue, uint8_t inChannel);
     void           sendAfterTouch(uint8_t inPressure, uint8_t inChannel, uint8_t inNoteNumber);
     void           sendAfterTouch(uint8_t inPressure, uint8_t inChannel);
@@ -297,6 +301,7 @@ class MIDI
     void           sendTuneRequest();
     void           sendRealTime(messageType_t inType);
     void           sendMMC(uint8_t deviceID, messageType_t mmc);
+    void           sendNRPN(uint16_t inParameterNumber, uint16_t inValue, uint8_t inChannel, bool value14bit = false);
     void           setNoteOffMode(noteOffType_t type);
     void           setRunningStatusState(bool state);
     bool           getRunningStatusState();

@@ -619,6 +619,35 @@ void MIDI::sendMMC(uint8_t deviceID, messageType_t mmc)
     sendSysEx(6, mmcArray, true);
 }
 
+void MIDI::sendNRPN(uint16_t inParameterNumber, uint16_t inValue, uint8_t inChannel, bool value14bit)
+{
+    Split14bit split14bit;
+    split14bit.split(inParameterNumber);
+
+    sendControlChange(99, split14bit.high(), inChannel);
+    sendControlChange(98, split14bit.low(), inChannel);
+
+    if (!value14bit)
+    {
+        sendControlChange(6, inValue, inChannel);
+    }
+    else
+    {
+        split14bit.split(inValue);
+        sendControlChange(6, split14bit.high(), inChannel);
+        sendControlChange(38, split14bit.low(), inChannel);
+    }
+}
+
+void MIDI::sendControlChange14bit(uint16_t inControlNumber, uint16_t inControlValue, uint8_t inChannel)
+{
+    Split14bit split14bit;
+    split14bit.split(inControlValue);
+
+    sendControlChange(inControlNumber, split14bit.high(), inChannel);
+    sendControlChange(inControlNumber + 32, split14bit.low(), inChannel);
+}
+
 ///
 /// \brief Enable or disable running status.
 ///
