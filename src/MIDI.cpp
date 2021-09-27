@@ -816,7 +816,7 @@ bool MIDI::parse(interface_t type)
             {
                 //reception complete
                 dinMessage.type    = getTypeFromStatusByte(mPendingMessage[0]);
-                dinMessage.channel = getChannelFromStatusByte(mPendingMessage[0]);
+                dinMessage.channel = getChannelFromStatusByte(mPendingMessage[0], zeroStartChannel);
                 dinMessage.data1   = mPendingMessage[1];
 
                 //save data2 only if applicable
@@ -932,7 +932,7 @@ bool MIDI::parse(interface_t type)
                 dinMessage.type = getTypeFromStatusByte(mPendingMessage[0]);
 
                 if (isChannelMessage(dinMessage.type))
-                    dinMessage.channel = getChannelFromStatusByte(mPendingMessage[0]);
+                    dinMessage.channel = getChannelFromStatusByte(mPendingMessage[0], zeroStartChannel);
                 else
                     dinMessage.channel = 0;
 
@@ -1038,7 +1038,7 @@ bool MIDI::parse(interface_t type)
             //case static_cast<uint8_t>(messageType_t::sysCommonTimeCodeQuarterFrame):
             //case static_cast<uint8_t>(messageType_t::sysCommonSongSelect):
             usbMessage.type    = static_cast<messageType_t>(usbMIDIpacket.Data1);
-            usbMessage.channel = getChannelFromStatusByte(usbMIDIpacket.Data1);
+            usbMessage.channel = getChannelFromStatusByte(usbMIDIpacket.Data1, zeroStartChannel);
             usbMessage.data1   = usbMIDIpacket.Data2;
             usbMessage.data2   = 0;
             usbMessage.valid   = true;
@@ -1055,7 +1055,7 @@ bool MIDI::parse(interface_t type)
         case static_cast<uint8_t>(messageType_t::sysCommonSongPosition):
         {
             usbMessage.type    = static_cast<messageType_t>(midiMessage);
-            usbMessage.channel = getChannelFromStatusByte(usbMIDIpacket.Data1);
+            usbMessage.channel = getChannelFromStatusByte(usbMIDIpacket.Data1, zeroStartChannel);
             usbMessage.data1   = usbMIDIpacket.Data2;
             usbMessage.data2   = usbMIDIpacket.Data3;
             usbMessage.valid   = true;
@@ -1403,10 +1403,11 @@ MIDI::messageType_t MIDI::getTypeFromStatusByte(uint8_t inStatus)
 
 ///
 /// \brief Extract MIDI channel from status byte.
-/// \param inStatus [in]    Status byte.
+/// \param inStatus [in]            Status byte.
+/// \param zeroStartChannel [in]    Specifies whether to return channel starting from 0.
 /// \returns Extracted MIDI channel.
 ///
-uint8_t MIDI::getChannelFromStatusByte(uint8_t inStatus)
+uint8_t MIDI::getChannelFromStatusByte(uint8_t inStatus, bool zeroStartChannel)
 {
     return (inStatus & 0x0f) + 1 - zeroStartChannel;
 }
