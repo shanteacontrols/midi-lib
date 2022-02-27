@@ -152,15 +152,14 @@ void MIDI::send(messageType_t inType, uint8_t inData1, uint8_t inData2, uint8_t 
 
         uint8_t event = static_cast<uint8_t>(inType) >> static_cast<uint8_t>(4);
 
-        USBMIDIpacket_t MIDIEvent = (USBMIDIpacket_t){
-            .Event = event,
+        usbMIDIPacket_t usbPacket;
 
-            .Data1 = status,
-            .Data2 = inData1,
-            .Data3 = inData2,
-        };
+        usbPacket[USB_EVENT] = event;
+        usbPacket[USB_DATA1] = status;
+        usbPacket[USB_DATA2] = inData1;
+        usbPacket[USB_DATA3] = inData2;
 
-        usbWrite(MIDIEvent);
+        usbWrite(usbPacket);
     }
     else if (inType >= messageType_t::sysCommonTuneRequest && inType <= messageType_t::sysRealTimeSystemReset)
     {
@@ -278,7 +277,7 @@ void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayCont
 
     if (interface == interface_t::all || interface == interface_t::usb)
     {
-        USBMIDIpacket_t MIDIEvent;
+        usbMIDIPacket_t usbPacket;
 
         if (!inArrayContainsBoundaries)
         {
@@ -290,15 +289,12 @@ void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayCont
             {
                 if (firstByte)
                 {
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
+                    usbPacket[USB_EVENT] = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin));
+                    usbPacket[USB_DATA1] = static_cast<uint8_t>(messageType_t::systemExclusive);
+                    usbPacket[USB_DATA2] = inArray[0];
+                    usbPacket[USB_DATA3] = inArray[1];
 
-                        .Data1 = static_cast<uint8_t>(messageType_t::systemExclusive),
-                        .Data2 = inArray[0],
-                        .Data3 = inArray[1],
-                    };
-
-                    usbWrite(MIDIEvent);
+                    usbWrite(usbPacket);
 
                     firstByte = false;
                     startSent = true;
@@ -307,15 +303,12 @@ void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayCont
                 }
                 else
                 {
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
+                    usbPacket[USB_EVENT] = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin));
+                    usbPacket[USB_DATA1] = inArray[0];
+                    usbPacket[USB_DATA2] = inArray[1];
+                    usbPacket[USB_DATA3] = inArray[2];
 
-                        .Data1 = inArray[0],
-                        .Data2 = inArray[1],
-                        .Data3 = inArray[2],
-                    };
-
-                    usbWrite(MIDIEvent);
+                    usbWrite(usbPacket);
 
                     inArray += 3;
                     inLength -= 3;
@@ -326,111 +319,84 @@ void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayCont
             {
                 if (startSent)
                 {
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
+                    usbPacket[USB_EVENT] = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin));
+                    usbPacket[USB_DATA1] = inArray[0];
+                    usbPacket[USB_DATA2] = inArray[1];
+                    usbPacket[USB_DATA3] = inArray[2];
 
-                        .Data1 = inArray[0],
-                        .Data2 = inArray[1],
-                        .Data3 = inArray[2],
-                    };
+                    usbWrite(usbPacket);
 
-                    usbWrite(MIDIEvent);
+                    usbPacket[USB_EVENT] = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop1byteCin));
+                    usbPacket[USB_DATA1] = 0xF7;
+                    usbPacket[USB_DATA2] = 0;
+                    usbPacket[USB_DATA3] = 0;
 
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop1byteCin)),
-
-                        .Data1 = 0xF7,
-                        .Data2 = 0,
-                        .Data3 = 0,
-                    };
-
-                    usbWrite(MIDIEvent);
+                    usbWrite(usbPacket);
                 }
                 else
                 {
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
+                    usbPacket[USB_EVENT] = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin));
+                    usbPacket[USB_DATA1] = static_cast<uint8_t>(messageType_t::systemExclusive);
+                    usbPacket[USB_DATA2] = inArray[0];
+                    usbPacket[USB_DATA3] = inArray[1];
 
-                        .Data1 = static_cast<uint8_t>(messageType_t::systemExclusive),
-                        .Data2 = inArray[0],
-                        .Data3 = inArray[1],
-                    };
+                    usbWrite(usbPacket);
 
-                    usbWrite(MIDIEvent);
+                    usbPacket[USB_EVENT] = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop2byteCin));
+                    usbPacket[USB_DATA1] = inArray[2];
+                    usbPacket[USB_DATA2] = 0xF7;
+                    usbPacket[USB_DATA3] = 0;
 
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop2byteCin)),
-
-                        .Data1 = inArray[2],
-                        .Data2 = 0xF7,
-                        .Data3 = 0,
-                    };
-
-                    usbWrite(MIDIEvent);
+                    usbWrite(usbPacket);
                 }
             }
             else if (inLength == 2)
             {
                 if (startSent)
                 {
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop3byteCin)),
+                    usbPacket[USB_EVENT] = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop3byteCin));
+                    usbPacket[USB_DATA1] = inArray[0];
+                    usbPacket[USB_DATA2] = inArray[1];
+                    usbPacket[USB_DATA3] = 0xF7;
 
-                        .Data1 = inArray[0],
-                        .Data2 = inArray[1],
-                        .Data3 = 0xF7,
-                    };
-
-                    usbWrite(MIDIEvent);
+                    usbWrite(usbPacket);
                 }
                 else
                 {
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
+                    usbPacket[USB_EVENT] = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin));
+                    usbPacket[USB_DATA1] = static_cast<uint8_t>(messageType_t::systemExclusive);
+                    usbPacket[USB_DATA2] = inArray[0];
+                    usbPacket[USB_DATA3] = inArray[1];
 
-                        .Data1 = static_cast<uint8_t>(messageType_t::systemExclusive),
-                        .Data2 = inArray[0],
-                        .Data3 = inArray[1],
-                    };
+                    usbWrite(usbPacket);
 
-                    usbWrite(MIDIEvent);
+                    usbPacket[USB_EVENT] = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop1byteCin));
+                    usbPacket[USB_DATA1] = 0xF7;
+                    usbPacket[USB_DATA2] = 0;
+                    usbPacket[USB_DATA3] = 0;
 
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop1byteCin)),
-
-                        .Data1 = 0xF7,
-                        .Data2 = 0,
-                        .Data3 = 0,
-                    };
-
-                    usbWrite(MIDIEvent);
+                    usbWrite(usbPacket);
                 }
             }
             else if (inLength == 1)
             {
                 if (startSent)
                 {
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop2byteCin)),
+                    usbPacket[USB_EVENT] = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop2byteCin));
+                    usbPacket[USB_DATA1] = inArray[0];
+                    usbPacket[USB_DATA2] = 0xF7;
+                    usbPacket[USB_DATA3] = 0;
 
-                        .Data1 = inArray[0],
-                        .Data2 = 0xF7,
-                        .Data3 = 0,
-                    };
-
-                    usbWrite(MIDIEvent);
+                    usbWrite(usbPacket);
                 }
                 else
                 {
-                    MIDIEvent = (USBMIDIpacket_t){
-                        .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop3byteCin)),
+                    usbPacket[USB_EVENT] = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop3byteCin));
+                    usbPacket[USB_DATA1] = 0xF0;
+                    usbPacket[USB_DATA2] = inArray[0];
+                    usbPacket[USB_DATA3] = 0xF7;
 
-                        .Data1 = 0xF0,
-                        .Data2 = inArray[0],
-                        .Data3 = 0xF7,
-                    };
-
-                    usbWrite(MIDIEvent);
+                    usbWrite(usbPacket);
                 }
             }
         }
@@ -438,15 +404,12 @@ void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayCont
         {
             while (inLength > 3)
             {
-                MIDIEvent = (USBMIDIpacket_t){
-                    .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin)),
+                usbPacket[USB_EVENT] = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin));
+                usbPacket[USB_DATA1] = inArray[0];
+                usbPacket[USB_DATA2] = inArray[1];
+                usbPacket[USB_DATA3] = inArray[2];
 
-                    .Data1 = inArray[0],
-                    .Data2 = inArray[1],
-                    .Data3 = inArray[2],
-                };
-
-                usbWrite(MIDIEvent);
+                usbWrite(usbPacket);
 
                 inArray += 3;
                 inLength -= 3;
@@ -454,39 +417,30 @@ void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayCont
 
             if (inLength == 3)
             {
-                MIDIEvent = (USBMIDIpacket_t){
-                    .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop3byteCin)),
+                usbPacket[USB_EVENT] = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop3byteCin));
+                usbPacket[USB_DATA1] = inArray[0];
+                usbPacket[USB_DATA2] = inArray[1];
+                usbPacket[USB_DATA3] = inArray[2];
 
-                    .Data1 = inArray[0],
-                    .Data2 = inArray[1],
-                    .Data3 = inArray[2],
-                };
-
-                usbWrite(MIDIEvent);
+                usbWrite(usbPacket);
             }
             else if (inLength == 2)
             {
-                MIDIEvent = (USBMIDIpacket_t){
-                    .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop2byteCin)),
+                usbPacket[USB_EVENT] = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop2byteCin));
+                usbPacket[USB_DATA1] = inArray[0];
+                usbPacket[USB_DATA2] = inArray[1];
+                usbPacket[USB_DATA3] = 0;
 
-                    .Data1 = inArray[0],
-                    .Data2 = inArray[1],
-                    .Data3 = 0,
-                };
-
-                usbWrite(MIDIEvent);
+                usbWrite(usbPacket);
             }
             else if (inLength == 1)
             {
-                MIDIEvent = (USBMIDIpacket_t){
-                    .Event = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop1byteCin)),
+                usbPacket[USB_EVENT] = USBMIDIEvent(0, static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop1byteCin));
+                usbPacket[USB_DATA1] = inArray[0];
+                usbPacket[USB_DATA2] = 0;
+                usbPacket[USB_DATA3] = 0;
 
-                    .Data1 = inArray[0],
-                    .Data2 = 0,
-                    .Data3 = 0,
-                };
-
-                usbWrite(MIDIEvent);
+                usbWrite(usbPacket);
             }
         }
     }
@@ -575,15 +529,15 @@ void MIDI::sendRealTime(messageType_t inType)
     case messageType_t::sysRealTimeSystemReset:
     {
         dinWrite(static_cast<uint8_t>(inType));
-        USBMIDIpacket_t MIDIEvent = (USBMIDIpacket_t){
-            .Event = static_cast<uint8_t>(messageType_t::systemExclusive) >> 4,
 
-            .Data1 = static_cast<uint8_t>(inType),
-            .Data2 = 0x00,
-            .Data3 = 0x00,
-        };
+        usbMIDIPacket_t usbPacket;
 
-        usbWrite(MIDIEvent);
+        usbPacket[USB_EVENT] = static_cast<uint8_t>(messageType_t::systemExclusive) >> 4;
+        usbPacket[USB_DATA1] = static_cast<uint8_t>(inType);
+        usbPacket[USB_DATA2] = 0;
+        usbPacket[USB_DATA3] = 0;
+
+        usbWrite(usbPacket);
     }
     break;
 
@@ -992,7 +946,7 @@ bool MIDI::parse(interface_t type)
         // we already have entire message here
         // MIDIEvent.Event is CIN, see midi10.pdf
         // shift cin four bytes left to get messageType_t
-        uint8_t midiMessage = usbMIDIpacket.Event << 4;
+        uint8_t midiMessage = usbMIDIpacket[USB_EVENT] << 4;
 
         switch (midiMessage)
         {
@@ -1000,7 +954,7 @@ bool MIDI::parse(interface_t type)
         case static_cast<uint8_t>(usbMIDIsystemCin_t::sysCommon1byteCin):
         case static_cast<uint8_t>(usbMIDIsystemCin_t::singleByte):
         {
-            if (usbMIDIpacket.Data1 != 0xF7)
+            if (usbMIDIpacket[USB_DATA1] != 0xF7)
             {
                 // this isn't end of sysex, it's 1byte system common message
 
@@ -1010,7 +964,7 @@ bool MIDI::parse(interface_t type)
                 // case messageType_t::sysRealTimeStop:
                 // case messageType_t::sysRealTimeActiveSensing:
                 // case messageType_t::sysRealTimeSystemReset:
-                usbMessage.type    = static_cast<messageType_t>(usbMIDIpacket.Data1);
+                usbMessage.type    = static_cast<messageType_t>(usbMIDIpacket[USB_DATA1]);
                 usbMessage.channel = 0;
                 usbMessage.data1   = 0;
                 usbMessage.data2   = 0;
@@ -1037,9 +991,9 @@ bool MIDI::parse(interface_t type)
             // case static_cast<uint8_t>(messageType_t::afterTouchChannel):
             // case static_cast<uint8_t>(messageType_t::sysCommonTimeCodeQuarterFrame):
             // case static_cast<uint8_t>(messageType_t::sysCommonSongSelect):
-            usbMessage.type    = static_cast<messageType_t>(usbMIDIpacket.Data1);
-            usbMessage.channel = getChannelFromStatusByte(usbMIDIpacket.Data1, zeroStartChannel);
-            usbMessage.data1   = usbMIDIpacket.Data2;
+            usbMessage.type    = static_cast<messageType_t>(usbMIDIpacket[USB_DATA1]);
+            usbMessage.channel = getChannelFromStatusByte(usbMIDIpacket[USB_DATA1], zeroStartChannel);
+            usbMessage.data1   = usbMIDIpacket[USB_DATA2];
             usbMessage.data2   = 0;
             usbMessage.valid   = true;
             return true;
@@ -1055,9 +1009,9 @@ bool MIDI::parse(interface_t type)
         case static_cast<uint8_t>(messageType_t::sysCommonSongPosition):
         {
             usbMessage.type    = static_cast<messageType_t>(midiMessage);
-            usbMessage.channel = getChannelFromStatusByte(usbMIDIpacket.Data1, zeroStartChannel);
-            usbMessage.data1   = usbMIDIpacket.Data2;
-            usbMessage.data2   = usbMIDIpacket.Data3;
+            usbMessage.channel = getChannelFromStatusByte(usbMIDIpacket[USB_DATA1], zeroStartChannel);
+            usbMessage.data1   = usbMIDIpacket[USB_DATA2];
+            usbMessage.data2   = usbMIDIpacket[USB_DATA3];
             usbMessage.valid   = true;
             return true;
         }
@@ -1067,14 +1021,14 @@ bool MIDI::parse(interface_t type)
         case static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStartCin):
         {
             // the message can be any length between 3 and MIDI_SYSEX_ARRAY_SIZE
-            if (usbMIDIpacket.Data1 == 0xF0)
+            if (usbMIDIpacket[USB_DATA1] == 0xF0)
                 sysExArrayLength = 0;    // this is a new sysex message, reset length
 
-            usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket.Data1;
+            usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket[USB_DATA1];
             sysExArrayLength++;
-            usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket.Data2;
+            usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket[USB_DATA2];
             sysExArrayLength++;
-            usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket.Data3;
+            usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket[USB_DATA3];
             sysExArrayLength++;
             return false;
         }
@@ -1082,9 +1036,9 @@ bool MIDI::parse(interface_t type)
 
         case static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop2byteCin):
         {
-            usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket.Data1;
+            usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket[USB_DATA1];
             sysExArrayLength++;
-            usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket.Data2;
+            usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket[USB_DATA2];
             sysExArrayLength++;
             usbMessage.type    = messageType_t::systemExclusive;
             usbMessage.channel = 0;
@@ -1095,14 +1049,14 @@ bool MIDI::parse(interface_t type)
 
         case static_cast<uint8_t>(usbMIDIsystemCin_t::sysExStop3byteCin):
         {
-            if (usbMIDIpacket.Data1 == 0xF0)
+            if (usbMIDIpacket[USB_DATA1] == 0xF0)
                 sysExArrayLength = 0;    // sysex message with 1 byte of payload
 
-            usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket.Data1;
+            usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket[USB_DATA1];
             sysExArrayLength++;
-            usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket.Data2;
+            usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket[USB_DATA2];
             sysExArrayLength++;
-            usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket.Data3;
+            usbMessage.sysexArray[sysExArrayLength] = usbMIDIpacket[USB_DATA3];
             sysExArrayLength++;
             usbMessage.type    = messageType_t::systemExclusive;
             usbMessage.channel = 0;
@@ -1625,18 +1579,18 @@ bool MIDI::dinRead(uint8_t& data)
     return hwa.dinRead(data);
 }
 
-bool MIDI::usbWrite(USBMIDIpacket_t& USBMIDIpacket)
+bool MIDI::usbWrite(usbMIDIPacket_t& packet)
 {
     if (!usbEnabled)
         return false;
 
-    return hwa.usbWrite(USBMIDIpacket);
+    return hwa.usbWrite(packet);
 }
 
-bool MIDI::usbRead(USBMIDIpacket_t& USBMIDIpacket)
+bool MIDI::usbRead(usbMIDIPacket_t& packet)
 {
     if (!usbEnabled)
         return false;
 
-    return hwa.usbRead(USBMIDIpacket);
+    return hwa.usbRead(packet);
 }

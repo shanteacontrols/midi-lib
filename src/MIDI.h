@@ -23,6 +23,7 @@
 #pragma once
 
 #include <inttypes.h>
+#include <array>
 
 ///
 /// \brief Size of internal array in which SysEx message is being stored in bytes.
@@ -127,13 +128,15 @@ class MIDI
     ///
     /// Used to encapsulate sent and received MIDI messages from a USB MIDI interface.
     ///
-    typedef struct
+    using usbMIDIPacket_t = std::array<uint8_t, 4>;
+
+    enum usbPacketElement_t
     {
-        uint8_t Event;    ///< MIDI event type, constructed with the \ref GET_USB_MIDI_EVENT() macro.
-        uint8_t Data1;    ///< First byte of data in the MIDI event.
-        uint8_t Data2;    ///< Second byte of data in the MIDI event.
-        uint8_t Data3;    ///< Third byte of data in the MIDI event.
-    } USBMIDIpacket_t;
+        USB_EVENT,    ///< MIDI event type, constructed with the \ref GET_USB_MIDI_EVENT() macro.
+        USB_DATA1,    ///< First byte of data in the MIDI event.
+        USB_DATA2,    ///< Second byte of data in the MIDI event.
+        USB_DATA3     ///< Third byte of data in the MIDI event.
+    };
 
     ///
     /// \brief Enumeration holding USB-specific values for SysEx/System Common messages.
@@ -236,8 +239,8 @@ class MIDI
         virtual bool deInit(interface_t interface)            = 0;
         virtual bool dinRead(uint8_t& data)                   = 0;
         virtual bool dinWrite(uint8_t data)                   = 0;
-        virtual bool usbRead(USBMIDIpacket_t& USBMIDIpacket)  = 0;
-        virtual bool usbWrite(USBMIDIpacket_t& USBMIDIpacket) = 0;
+        virtual bool usbRead(usbMIDIPacket_t& USBMIDIpacket)  = 0;
+        virtual bool usbWrite(usbMIDIPacket_t& USBMIDIpacket) = 0;
     };
 
     ///
@@ -348,7 +351,7 @@ class MIDI
 
     /// @}
 
-    USBMIDIpacket_t usbMIDIpacket;
+    usbMIDIPacket_t usbMIDIpacket;
     bool            useRunningStatus                = false;
     bool            recursiveParseState             = false;
     bool            zeroStartChannel                = false;
@@ -369,6 +372,6 @@ class MIDI
     uint8_t getStatus(messageType_t inType, uint8_t inChannel);
     bool    dinRead(uint8_t& data);
     bool    dinWrite(uint8_t data);
-    bool    usbRead(USBMIDIpacket_t& USBMIDIpacket);
-    bool    usbWrite(USBMIDIpacket_t& USBMIDIpacket);
+    bool    usbRead(usbMIDIPacket_t& USBMIDIpacket);
+    bool    usbWrite(usbMIDIPacket_t& USBMIDIpacket);
 };
