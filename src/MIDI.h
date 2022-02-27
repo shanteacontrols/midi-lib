@@ -153,7 +153,7 @@ class MIDI
         sysExStop3byteCin = 0x70
     };
 
-    //split 14bit value into higher and lower byte
+    // split 14bit value into higher and lower byte
     class Split14bit
     {
         public:
@@ -194,7 +194,7 @@ class MIDI
         uint8_t _low  = 0;
     };
 
-    //create 14bit value from higher and lower byte
+    // create 14bit value from higher and lower byte
     class Merge14bit
     {
         public:
