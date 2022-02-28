@@ -33,7 +33,7 @@
 #define MIDI_SYSEX_ARRAY_SIZE 45
 #endif
 
-class MIDI
+class MIDIlib
 {
     public:
     ///
@@ -281,7 +281,7 @@ class MIDI
         return ((virtualcable << 4) | (command >> 4));
     }
 
-    MIDI(HWA& hwa)
+    MIDIlib(HWA& hwa)
         : hwa(hwa)
     {}
 

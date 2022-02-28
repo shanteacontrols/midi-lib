@@ -36,7 +36,7 @@
 ///
 #define highByte_7bit(value) ((value >> 7) & 0x7f)
 
-bool MIDI::init(interface_t interface)
+bool MIDIlib::init(interface_t interface)
 {
     if (hwa.init(interface))
     {
@@ -62,7 +62,7 @@ bool MIDI::init(interface_t interface)
     return false;
 }
 
-bool MIDI::deInit(interface_t interface)
+bool MIDIlib::deInit(interface_t interface)
 {
     switch (interface)
     {
@@ -92,7 +92,7 @@ bool MIDI::deInit(interface_t interface)
 /// \param [in] inData2     The second data byte (if the message contains only 1 data byte, set this one to 0).
 /// \param inChannel        The output channel on which the message will be sent (values from 1 to 16). Note: you cannot send to OMNI.
 ///
-void MIDI::send(messageType_t inType, uint8_t inData1, uint8_t inData2, uint8_t inChannel)
+void MIDIlib::send(messageType_t inType, uint8_t inData1, uint8_t inData2, uint8_t inChannel)
 {
     bool channelValid = true;
 
@@ -174,7 +174,7 @@ void MIDI::send(messageType_t inType, uint8_t inData1, uint8_t inData2, uint8_t 
 /// \param inVelocity [in]      Note attack velocity (0 to 127).
 /// \param inChannel [in]       The channel on which the message will be sent (1 to 16).
 ///
-void MIDI::sendNoteOn(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel)
+void MIDIlib::sendNoteOn(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel)
 {
     send(messageType_t::noteOn, inNoteNumber, inVelocity, inChannel);
 }
@@ -188,7 +188,7 @@ void MIDI::sendNoteOn(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChanne
 /// \param inVelocity [in]      Release velocity (0 to 127).
 /// \param inChannel [in]       The channel on which the message will be sent (1 to 16).
 ///
-void MIDI::sendNoteOff(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel)
+void MIDIlib::sendNoteOff(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChannel)
 {
     if (noteOffMode == noteOffType_t::standardNoteOff)
         send(messageType_t::noteOff, inNoteNumber, inVelocity, inChannel);
@@ -201,7 +201,7 @@ void MIDI::sendNoteOff(uint8_t inNoteNumber, uint8_t inVelocity, uint8_t inChann
 /// \param inProgramNumber [in]     The program to select (0 to 127).
 /// \param inChannel [in]           The channel on which the message will be sent (1 to 16).
 ///
-void MIDI::sendProgramChange(uint8_t inProgramNumber, uint8_t inChannel)
+void MIDIlib::sendProgramChange(uint8_t inProgramNumber, uint8_t inChannel)
 {
     send(messageType_t::programChange, inProgramNumber, 0, inChannel);
 }
@@ -212,7 +212,7 @@ void MIDI::sendProgramChange(uint8_t inProgramNumber, uint8_t inChannel)
 /// \param inControlValue [in]      The value for the specified controller (0 to 127).
 /// \param inChannel [in]           The channel on which the message will be sent (1 to 16).
 ///
-void MIDI::sendControlChange(uint8_t inControlNumber, uint8_t inControlValue, uint8_t inChannel)
+void MIDIlib::sendControlChange(uint8_t inControlNumber, uint8_t inControlValue, uint8_t inChannel)
 {
     send(messageType_t::controlChange, inControlNumber, inControlValue, inChannel);
 }
@@ -223,7 +223,7 @@ void MIDI::sendControlChange(uint8_t inControlNumber, uint8_t inControlValue, ui
 /// \param inChannel [in]     The channel on which the message will be sent (1 to 16).
 /// \param inNoteNumber [in]  The note to apply AfterTouch to (0 to 127).
 ///
-void MIDI::sendAfterTouch(uint8_t inPressure, uint8_t inChannel, uint8_t inNoteNumber)
+void MIDIlib::sendAfterTouch(uint8_t inPressure, uint8_t inChannel, uint8_t inNoteNumber)
 {
     send(messageType_t::afterTouchPoly, inNoteNumber, inPressure, inChannel);
 }
@@ -233,7 +233,7 @@ void MIDI::sendAfterTouch(uint8_t inPressure, uint8_t inChannel, uint8_t inNoteN
 /// \param inPressure [in]    The amount of AfterTouch to apply (0 to 127).
 /// \param inChannel [in]     The channel on which the message will be sent (1 to 16).
 ///
-void MIDI::sendAfterTouch(uint8_t inPressure, uint8_t inChannel)
+void MIDIlib::sendAfterTouch(uint8_t inPressure, uint8_t inChannel)
 {
     send(messageType_t::afterTouchChannel, inPressure, 0, inChannel);
 }
@@ -243,7 +243,7 @@ void MIDI::sendAfterTouch(uint8_t inPressure, uint8_t inChannel)
 /// \param inPitchValue [in]  The amount of bend to send (0-16383).
 /// \param inChannel [in]     The channel on which the message will be sent (1 to 16).
 ///
-void MIDI::sendPitchBend(uint16_t inPitchValue, uint8_t inChannel)
+void MIDIlib::sendPitchBend(uint16_t inPitchValue, uint8_t inChannel)
 {
     inPitchValue &= 0x3FFF;
     send(messageType_t::pitchBend, lowByte_7bit(inPitchValue), highByte_7bit(inPitchValue), inChannel);
@@ -258,7 +258,7 @@ void MIDI::sendPitchBend(uint16_t inPitchValue, uint8_t inChannel)
 /// \param interface_t [in]                 Specifies on which interface given SysEx message will be sent.
 ///                                         If left undefined, message will be sent on both USB and DIN interface.
 ///
-void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayContainsBoundaries, interface_t interface)
+void MIDIlib::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayContainsBoundaries, interface_t interface)
 {
     if (interface == interface_t::all || interface == interface_t::din)
     {
@@ -451,7 +451,7 @@ void MIDI::sendSysEx(uint16_t inLength, const uint8_t* inArray, bool inArrayCont
 ///
 /// When a MIDI unit receives this message, it should tune its oscillators (if equipped with any).
 ///
-void MIDI::sendTuneRequest()
+void MIDIlib::sendTuneRequest()
 {
     dinWrite(static_cast<uint8_t>(messageType_t::sysCommonTuneRequest));
 
@@ -465,7 +465,7 @@ void MIDI::sendTuneRequest()
 /// \param inValuesNibble [in]  MTC data.
 /// See MIDI Specification for more information.
 ///
-void MIDI::sendTimeCodeQuarterFrame(uint8_t inTypeNibble, uint8_t inValuesNibble)
+void MIDIlib::sendTimeCodeQuarterFrame(uint8_t inTypeNibble, uint8_t inValuesNibble)
 {
     uint8_t data = (((inTypeNibble & 0x07) << 4) | (inValuesNibble & 0x0f));
     sendTimeCodeQuarterFrame(data);
@@ -476,7 +476,7 @@ void MIDI::sendTimeCodeQuarterFrame(uint8_t inTypeNibble, uint8_t inValuesNibble
 /// \param inData [in]  If you want to encode directly the nibbles in your program,
 ///                     you can send the byte here.
 ///
-void MIDI::sendTimeCodeQuarterFrame(uint8_t inData)
+void MIDIlib::sendTimeCodeQuarterFrame(uint8_t inData)
 {
     dinWrite(static_cast<uint8_t>(messageType_t::sysCommonTimeCodeQuarterFrame));
     dinWrite(inData);
@@ -489,7 +489,7 @@ void MIDI::sendTimeCodeQuarterFrame(uint8_t inData)
 /// \brief Send a Song Position Pointer message.
 /// \param inBeats [in]     The number of beats since the start of the song.
 ///
-void MIDI::sendSongPosition(uint16_t inBeats)
+void MIDIlib::sendSongPosition(uint16_t inBeats)
 {
     dinWrite(static_cast<uint8_t>(messageType_t::sysCommonSongPosition));
     dinWrite(inBeats & 0x7f);
@@ -503,7 +503,7 @@ void MIDI::sendSongPosition(uint16_t inBeats)
 /// \brief Send a Song Select message.
 /// \param inSongNumber [in]    Song to select (0-127).
 ///
-void MIDI::sendSongSelect(uint8_t inSongNumber)
+void MIDIlib::sendSongSelect(uint8_t inSongNumber)
 {
     dinWrite(static_cast<uint8_t>(messageType_t::sysCommonSongSelect));
     dinWrite(inSongNumber & 0x7f);
@@ -517,7 +517,7 @@ void MIDI::sendSongSelect(uint8_t inSongNumber)
 /// \param inType [in]  The available Real Time types are:
 ///                     Start, Stop, Continue, Clock, ActiveSensing and SystemReset.
 ///
-void MIDI::sendRealTime(messageType_t inType)
+void MIDIlib::sendRealTime(messageType_t inType)
 {
     switch (inType)
     {
@@ -551,7 +551,7 @@ void MIDI::sendRealTime(messageType_t inType)
 /// \brief Sends transport control messages.
 /// Based on MIDI specification for transport control.
 ///
-void MIDI::sendMMC(uint8_t deviceID, messageType_t mmc)
+void MIDIlib::sendMMC(uint8_t deviceID, messageType_t mmc)
 {
     switch (mmc)
     {
@@ -573,7 +573,7 @@ void MIDI::sendMMC(uint8_t deviceID, messageType_t mmc)
     sendSysEx(6, mmcArray, true);
 }
 
-void MIDI::sendNRPN(uint16_t inParameterNumber, uint16_t inValue, uint8_t inChannel, bool value14bit)
+void MIDIlib::sendNRPN(uint16_t inParameterNumber, uint16_t inValue, uint8_t inChannel, bool value14bit)
 {
     Split14bit split14bit;
     split14bit.split(inParameterNumber);
@@ -593,7 +593,7 @@ void MIDI::sendNRPN(uint16_t inParameterNumber, uint16_t inValue, uint8_t inChan
     }
 }
 
-void MIDI::sendControlChange14bit(uint16_t inControlNumber, uint16_t inControlValue, uint8_t inChannel)
+void MIDIlib::sendControlChange14bit(uint16_t inControlNumber, uint16_t inControlValue, uint8_t inChannel)
 {
     Split14bit split14bit;
     split14bit.split(inControlValue);
@@ -608,7 +608,7 @@ void MIDI::sendControlChange14bit(uint16_t inControlNumber, uint16_t inControlVa
 /// Applies to DIN MIDI only (outgoing messages).
 /// \param [in] state   True when enabling running status, false otherwise.
 ///
-void MIDI::setRunningStatusState(bool state)
+void MIDIlib::setRunningStatusState(bool state)
 {
     useRunningStatus = state;
 }
@@ -617,7 +617,7 @@ void MIDI::setRunningStatusState(bool state)
 /// \brief Returns current running status state for outgoing DIN MIDI messages.
 /// \returns True if running status is enabled, false otherwise.
 ///
-bool MIDI::getRunningStatusState()
+bool MIDIlib::getRunningStatusState()
 {
     return useRunningStatus;
 }
@@ -628,7 +628,7 @@ bool MIDI::getRunningStatusState()
 /// \param inChannel [in]   MIDI channel.
 /// \returns Calculated status byte.
 ///
-uint8_t MIDI::getStatus(messageType_t inType, uint8_t inChannel)
+uint8_t MIDIlib::getStatus(messageType_t inType, uint8_t inChannel)
 {
     return (static_cast<uint8_t>(inType) | ((inChannel - 1) & 0x0f));
 }
@@ -643,7 +643,7 @@ uint8_t MIDI::getStatus(messageType_t inType, uint8_t inChannel)
 /// \param filterMode [in]  Thru filter mode. See filterMode_t.
 /// \returns True on successful read.
 ///
-bool MIDI::read(interface_t type, filterMode_t filterMode)
+bool MIDIlib::read(interface_t type, filterMode_t filterMode)
 {
     if (mInputChannel == MIDI_CHANNEL_OFF)
         return false;    // MIDI Input disabled
@@ -661,7 +661,7 @@ bool MIDI::read(interface_t type, filterMode_t filterMode)
 /// \brief Handles parsing of MIDI messages.
 /// \param type [in] MIDI interface from which messages are being parsed.
 ///
-bool MIDI::parse(interface_t type)
+bool MIDIlib::parse(interface_t type)
 {
     if (type == interface_t::din)
     {
@@ -1081,7 +1081,7 @@ bool MIDI::parse(interface_t type)
 /// \param type [in]        MIDI interface which is being checked.
 /// \returns True if channel matches listened channel.
 ///
-bool MIDI::inputFilter(uint8_t inChannel, interface_t type)
+bool MIDIlib::inputFilter(uint8_t inChannel, interface_t type)
 {
     switch (type)
     {
@@ -1134,7 +1134,7 @@ bool MIDI::inputFilter(uint8_t inChannel, interface_t type)
 ///
 /// \brief Reset attributes for incoming message (DIN MIDI only).
 ///
-void MIDI::resetInput()
+void MIDIlib::resetInput()
 {
     dinPendingMessageIndex          = 0;
     dinPendingMessageExpectedLenght = 0;
@@ -1146,7 +1146,7 @@ void MIDI::resetInput()
 /// \param type [in]    MIDI interface which is being checked.
 /// \returns MIDI message type of the last received message.
 ///
-MIDI::messageType_t MIDI::getType(interface_t type)
+MIDIlib::messageType_t MIDIlib::getType(interface_t type)
 {
     // get the last received message's type
     switch (type)
@@ -1167,7 +1167,7 @@ MIDI::messageType_t MIDI::getType(interface_t type)
 /// \param type [in]    MIDI interface which is being checked.
 /// \returns MIDI channel of the last received message. For non-channel messages, this will return 0.
 ///
-uint8_t MIDI::getChannel(interface_t type)
+uint8_t MIDIlib::getChannel(interface_t type)
 {
     switch (type)
     {
@@ -1187,7 +1187,7 @@ uint8_t MIDI::getChannel(interface_t type)
 /// \param type [in]    MIDI interface which is being checked.
 /// \returns First data byte of the last received message.
 ///
-uint8_t MIDI::getData1(interface_t type)
+uint8_t MIDIlib::getData1(interface_t type)
 {
     switch (type)
     {
@@ -1207,7 +1207,7 @@ uint8_t MIDI::getData1(interface_t type)
 /// \param type [in]    MIDI interface which is being checked.
 /// \returns Second data byte of the last received message.
 ///
-uint8_t MIDI::getData2(interface_t type)
+uint8_t MIDIlib::getData2(interface_t type)
 {
     switch (type)
     {
@@ -1227,7 +1227,7 @@ uint8_t MIDI::getData2(interface_t type)
 /// \param [in] type    MIDI interface from which SysEx array is located.
 /// \returns Pointer to SysEx array.
 ///
-uint8_t* MIDI::getSysExArray(interface_t type)
+uint8_t* MIDIlib::getSysExArray(interface_t type)
 {
     // get the System Exclusive byte array
     switch (type)
@@ -1248,7 +1248,7 @@ uint8_t* MIDI::getSysExArray(interface_t type)
 /// \param [in] type    MIDI interface on which SysEx size is being checked.
 /// \returns Size of SysEx array on given MIDI interface in bytes.
 ///
-uint16_t MIDI::getSysExArrayLength(interface_t type)
+uint16_t MIDIlib::getSysExArrayLength(interface_t type)
 {
     switch (type)
     {
@@ -1275,7 +1275,7 @@ uint16_t MIDI::getSysExArrayLength(interface_t type)
 /// \returns MIDI channel value (1-16) if zeroStartChannel is disabled, 0-15 otherwise.
 ///          Two additional values can be returned (MIDI_CHANNEL_OMNI and MIDI_CHANNEL_OFF).
 ///
-uint8_t MIDI::getInputChannel()
+uint8_t MIDIlib::getInputChannel()
 {
     if ((mInputChannel == MIDI_CHANNEL_OMNI) || (mInputChannel == MIDI_CHANNEL_OFF))
     {
@@ -1296,7 +1296,7 @@ uint8_t MIDI::getInputChannel()
 ///                         MIDI_CHANNEL_OFF value is used to disable input.
 /// \returns                True if passed channel is valid.
 ///
-bool MIDI::setInputChannel(uint8_t inChannel)
+bool MIDIlib::setInputChannel(uint8_t inChannel)
 {
     bool valid = false;
 
@@ -1332,7 +1332,7 @@ bool MIDI::setInputChannel(uint8_t inChannel)
 /// \param inStatus [in]    Status byte.
 /// \returns Extracted MIDI message type.
 ///
-MIDI::messageType_t MIDI::getTypeFromStatusByte(uint8_t inStatus)
+MIDIlib::messageType_t MIDIlib::getTypeFromStatusByte(uint8_t inStatus)
 {
     // extract an enumerated MIDI type from a status byte
 
@@ -1361,7 +1361,7 @@ MIDI::messageType_t MIDI::getTypeFromStatusByte(uint8_t inStatus)
 /// \param zeroStartChannel [in]    Specifies whether to return channel starting from 0.
 /// \returns Extracted MIDI channel.
 ///
-uint8_t MIDI::getChannelFromStatusByte(uint8_t inStatus, bool zeroStartChannel)
+uint8_t MIDIlib::getChannelFromStatusByte(uint8_t inStatus, bool zeroStartChannel)
 {
     return (inStatus & 0x0f) + 1 - zeroStartChannel;
 }
@@ -1371,7 +1371,7 @@ uint8_t MIDI::getChannelFromStatusByte(uint8_t inStatus, bool zeroStartChannel)
 /// \param inType [in]  Type of MIDI message which is being checked.
 /// \returns True if requested MIDI message type is channel type, false otherwise.
 ///
-bool MIDI::isChannelMessage(messageType_t inType)
+bool MIDIlib::isChannelMessage(messageType_t inType)
 {
     return (inType == messageType_t::noteOff ||
             inType == messageType_t::noteOn ||
@@ -1389,7 +1389,7 @@ bool MIDI::isChannelMessage(messageType_t inType)
 /// a lot of traffic, but might induce MIDI Thru and treatment latency.
 /// \param state [in]   Set to true to enable recursive parsing or false to disable it.
 ///
-void MIDI::useRecursiveParsing(bool state)
+void MIDIlib::useRecursiveParsing(bool state)
 {
     recursiveParseState = state;
 }
@@ -1405,7 +1405,7 @@ void MIDI::useRecursiveParsing(bool state)
 /// \param type [in]        MIDI interface which is being checked.
 /// \param filterMode [in]  MIDI thru filtering mode.
 ///
-void MIDI::thruFilter(uint8_t inChannel, interface_t type, filterMode_t filterMode)
+void MIDIlib::thruFilter(uint8_t inChannel, interface_t type, filterMode_t filterMode)
 {
     // if the feature is disabled, don't do anything.
     if (filterMode == filterMode_t::off)
@@ -1510,7 +1510,7 @@ void MIDI::thruFilter(uint8_t inChannel, interface_t type, filterMode_t filterMo
 /// \brief Configures how Note Off messages are sent.
 /// \param type [in]    Type of MIDI Note Off message. See noteOffType_t.
 ///
-void MIDI::setNoteOffMode(noteOffType_t type)
+void MIDIlib::setNoteOffMode(noteOffType_t type)
 {
     noteOffMode = type;
 }
@@ -1518,7 +1518,7 @@ void MIDI::setNoteOffMode(noteOffType_t type)
 ///
 /// \brief Checks how MIDI Note Off messages are being sent.
 ///
-MIDI::noteOffType_t MIDI::getNoteOffMode()
+MIDIlib::noteOffType_t MIDIlib::getNoteOffMode()
 {
     return noteOffMode;
 }
@@ -1528,7 +1528,7 @@ MIDI::noteOffType_t MIDI::getNoteOffMode()
 /// @param [in] note    Raw MIDI note (0-127).
 /// \returns Calculated octave (0 - MIDI_NOTES-1).
 ///
-uint8_t MIDI::getOctaveFromNote(int8_t note)
+uint8_t MIDIlib::getOctaveFromNote(int8_t note)
 {
     // sanitize input
     note &= 0x7F;
@@ -1541,7 +1541,7 @@ uint8_t MIDI::getOctaveFromNote(int8_t note)
 /// @param [in] note    Raw MIDI note (0-127).
 /// \returns Calculated tonic/root note (enumerated type). See note_t enumeration.
 ///
-MIDI::note_t MIDI::getTonicFromNote(int8_t note)
+MIDIlib::note_t MIDIlib::getTonicFromNote(int8_t note)
 {
     // sanitize input
     note &= 0x7F;
@@ -1558,12 +1558,12 @@ MIDI::note_t MIDI::getTonicFromNote(int8_t note)
 ///                     This is used only when sending MIDI messages. When requesting MIDI
 ///                     channel, normal 1-16 values are used.
 ///
-void MIDI::setChannelSendZeroStart(bool state)
+void MIDIlib::setChannelSendZeroStart(bool state)
 {
     zeroStartChannel = state ? true : false;
 }
 
-bool MIDI::dinWrite(uint8_t data)
+bool MIDIlib::dinWrite(uint8_t data)
 {
     if (!dinEnabled)
         return false;
@@ -1571,7 +1571,7 @@ bool MIDI::dinWrite(uint8_t data)
     return hwa.dinWrite(data);
 }
 
-bool MIDI::dinRead(uint8_t& data)
+bool MIDIlib::dinRead(uint8_t& data)
 {
     if (!dinEnabled)
         return false;
@@ -1579,7 +1579,7 @@ bool MIDI::dinRead(uint8_t& data)
     return hwa.dinRead(data);
 }
 
-bool MIDI::usbWrite(usbMIDIPacket_t& packet)
+bool MIDIlib::usbWrite(usbMIDIPacket_t& packet)
 {
     if (!usbEnabled)
         return false;
@@ -1587,7 +1587,7 @@ bool MIDI::usbWrite(usbMIDIPacket_t& packet)
     return hwa.usbWrite(packet);
 }
 
-bool MIDI::usbRead(usbMIDIPacket_t& packet)
+bool MIDIlib::usbRead(usbMIDIPacket_t& packet)
 {
     if (!usbEnabled)
         return false;
