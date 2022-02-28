@@ -341,23 +341,19 @@ class MIDIlib
     ///
     struct message_t
     {
-        uint8_t       channel;                              ///< MIDI channel on which the message was received (1-16)
-        messageType_t type;                                 ///< The type of the message
-        uint8_t       data1;                                ///< First data byte (0-127)
-        uint8_t       data2;                                ///< Second data byte (0-127, 0 if message length is 2 bytes)
-        uint8_t       sysexArray[MIDI_SYSEX_ARRAY_SIZE];    ///< SysEx array buffer
-        bool          valid;                                ///< Message valid/invalid (validity means the message respects the MIDI norm)
+        uint8_t       channel                           = 1;                         ///< MIDI channel on which the message was received (1-16)
+        messageType_t type                              = messageType_t::invalid;    ///< The type of the message
+        uint8_t       data1                             = 0;                         ///< First data byte (0-127)
+        uint8_t       data2                             = 0;                         ///< Second data byte (0-127, 0 if message length is 2 bytes)
+        uint8_t       sysexArray[MIDI_SYSEX_ARRAY_SIZE] = {};                        ///< SysEx array buffer
+        bool          valid                             = false;                     ///< Message valid/invalid (validity means the message respects the MIDI norm)
+
+        message_t() = default;
     };
 
-    ///
-    /// \brief Decoded MIDI messages for USB and DIN interfaces.
-    /// @{
-    message_t dinMessage;
-    message_t usbMessage;
-
-    /// @}
-
-    usbMIDIPacket_t usbMIDIpacket;
+    message_t       dinMessage;
+    message_t       usbMessage;
+    usbMIDIPacket_t usbMIDIpacket                   = {};
     bool            useRunningStatus                = false;
     bool            recursiveParseState             = false;
     bool            zeroStartChannel                = false;
