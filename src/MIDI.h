@@ -282,7 +282,7 @@ class MIDIlib
     /// \param [in] command         MIDI command to send through the virtual MIDI cable.
     /// \returns    Constructed USB MIDI event ID.
     ///
-    static uint8_t USBMIDIEvent(uint8_t virtualcable, uint8_t command)
+    static uint8_t usbMIDIEvent(uint8_t virtualcable, uint8_t command)
     {
         return ((virtualcable << 4) | (command >> 4));
     }
