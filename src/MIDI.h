@@ -333,7 +333,7 @@ class MIDIlib
     ///
     /// \brief Holds decoded data of a MIDI message.
     ///
-    typedef struct
+    struct message_t
     {
         uint8_t       channel;                              ///< MIDI channel on which the message was received (1-16)
         messageType_t type;                                 ///< The type of the message
@@ -341,7 +341,7 @@ class MIDIlib
         uint8_t       data2;                                ///< Second data byte (0-127, 0 if message length is 2 bytes)
         uint8_t       sysexArray[MIDI_SYSEX_ARRAY_SIZE];    ///< SysEx array buffer
         bool          valid;                                ///< Message valid/invalid (validity means the message respects the MIDI norm)
-    } message_t;
+    };
 
     ///
     /// \brief Decoded MIDI messages for USB and DIN interfaces.
