@@ -575,11 +575,10 @@ void MIDIlib::sendMMC(uint8_t deviceID, messageType_t mmc)
 
 void MIDIlib::sendNRPN(uint16_t inParameterNumber, uint16_t inValue, uint8_t inChannel, bool value14bit)
 {
-    Split14bit split14bit;
-    split14bit.split(inParameterNumber);
+    auto inParameterNumberSplit = Split14bit(inParameterNumber);
 
-    sendControlChange(99, split14bit.high(), inChannel);
-    sendControlChange(98, split14bit.low(), inChannel);
+    sendControlChange(99, inParameterNumberSplit.high(), inChannel);
+    sendControlChange(98, inParameterNumberSplit.low(), inChannel);
 
     if (!value14bit)
     {
@@ -587,19 +586,19 @@ void MIDIlib::sendNRPN(uint16_t inParameterNumber, uint16_t inValue, uint8_t inC
     }
     else
     {
-        split14bit.split(inValue);
-        sendControlChange(6, split14bit.high(), inChannel);
-        sendControlChange(38, split14bit.low(), inChannel);
+        auto inValueSplit = Split14bit(inValue);
+
+        sendControlChange(6, inValueSplit.high(), inChannel);
+        sendControlChange(38, inValueSplit.low(), inChannel);
     }
 }
 
 void MIDIlib::sendControlChange14bit(uint16_t inControlNumber, uint16_t inControlValue, uint8_t inChannel)
 {
-    Split14bit split14bit;
-    split14bit.split(inControlValue);
+    auto inControlValueSplit = Split14bit(inControlValue);
 
-    sendControlChange(inControlNumber, split14bit.high(), inChannel);
-    sendControlChange(inControlNumber + 32, split14bit.low(), inChannel);
+    sendControlChange(inControlNumber, inControlValueSplit.high(), inChannel);
+    sendControlChange(inControlNumber + 32, inControlValueSplit.low(), inChannel);
 }
 
 ///

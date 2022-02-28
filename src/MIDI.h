@@ -156,60 +156,24 @@ class MIDIlib
         sysExStop3byteCin = 0x70
     };
 
-    // split 14bit value into higher and lower byte
-    class Split14bit
-    {
-        public:
-        Split14bit()
-        {}
-
-        void split(uint16_t value)
-        {
-            value &= 0x3FFF;
-
-            uint8_t newHigh = (value >> 8) & 0xFF;
-            uint8_t newLow  = value & 0xFF;
-            newHigh         = (newHigh << 1) & 0x7F;
-
-            if ((newLow >> 7) & 0x01)
-                newHigh |= 0x01;
-            else
-                newHigh &= ~0x01;
-
-            newLow &= 0x7F;
-
-            _high = newHigh;
-            _low  = newLow;
-        }
-
-        uint8_t high() const
-        {
-            return _high;
-        }
-
-        uint8_t low() const
-        {
-            return _low;
-        }
-
-        private:
-        uint8_t _high = 0;
-        uint8_t _low  = 0;
-    };
-
-    // create 14bit value from higher and lower byte
+    ///
+    /// \brief Helper class used to convert 7-bit high and low bytes to single 14-bit value.
+    /// @param [in] high    Higher 7 bits.
+    /// @param [in] low     Lower 7 bits.
+    ///
     class Merge14bit
     {
         public:
-        Merge14bit()
-        {}
-
-        void merge(uint8_t high, uint8_t low)
+        Merge14bit(uint8_t high, uint8_t low)
         {
             if (high & 0x01)
+            {
                 low |= (1 << 7);
+            }
             else
+            {
                 low &= ~(1 << 7);
+            }
 
             high >>= 1;
 
@@ -228,6 +192,48 @@ class MIDIlib
 
         private:
         uint16_t _value;
+    };
+
+    ///
+    /// \brief Helper class used to convert single 14-bit value to high and low bytes (7-bit each).
+    /// @param [in]     value   14-bit value to split.
+    ///
+    class Split14bit
+    {
+        public:
+        Split14bit(uint16_t value)
+        {
+            uint8_t newHigh = (value >> 8) & 0xFF;
+            uint8_t newLow  = value & 0xFF;
+            newHigh         = (newHigh << 1) & 0x7F;
+
+            if ((newLow >> 7) & 0x01)
+            {
+                newHigh |= 0x01;
+            }
+            else
+            {
+                newHigh &= ~0x01;
+            }
+
+            newLow &= 0x7F;
+            _high = newHigh;
+            _low  = newLow;
+        }
+
+        uint8_t high() const
+        {
+            return _high;
+        }
+
+        uint8_t low() const
+        {
+            return _low;
+        }
+
+        private:
+        uint8_t _high;
+        uint8_t _low;
     };
 
     class HWA
