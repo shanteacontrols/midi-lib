@@ -44,40 +44,40 @@ namespace MIDIlib
         /// Enumeration holding various types of MIDI messages.
         enum class messageType_t : uint8_t
         {
-            noteOff                       = 0x80,    ///< Note Off
-            noteOn                        = 0x90,    ///< Note On
-            controlChange                 = 0xB0,    ///< Control Change / Channel Mode
-            programChange                 = 0xC0,    ///< Program Change
-            afterTouchChannel             = 0xD0,    ///< Channel (monophonic) AfterTouch
-            afterTouchPoly                = 0xA0,    ///< Polyphonic AfterTouch
-            pitchBend                     = 0xE0,    ///< Pitch Bend
-            systemExclusive               = 0xF0,    ///< System Exclusive
-            sysCommonTimeCodeQuarterFrame = 0xF1,    ///< System Common - MIDI Time Code Quarter Frame
-            sysCommonSongPosition         = 0xF2,    ///< System Common - Song Position Pointer
-            sysCommonSongSelect           = 0xF3,    ///< System Common - Song Select
-            sysCommonTuneRequest          = 0xF6,    ///< System Common - Tune Request
-            sysRealTimeClock              = 0xF8,    ///< System Real Time - Timing Clock
-            sysRealTimeStart              = 0xFA,    ///< System Real Time - Start
-            sysRealTimeContinue           = 0xFB,    ///< System Real Time - Continue
-            sysRealTimeStop               = 0xFC,    ///< System Real Time - Stop
-            sysRealTimeActiveSensing      = 0xFE,    ///< System Real Time - Active Sensing
-            sysRealTimeSystemReset        = 0xFF,    ///< System Real Time - System Reset
-            mmcPlay                       = 0x02,
-            mmcStop                       = 0x01,
-            mmcPause                      = 0x09,
-            mmcRecordStart                = 0x06,
-            mmcRecordStop                 = 0x07,
-            nrpn7bit                      = 0x99,
-            nrpn14bit                     = 0x38,
-            controlChange14bit            = 0x32,
-            invalid                       = 0x00    ///< For notifying errors
+            NOTE_OFF                           = 0x80,    ///< Note Off
+            NOTE_ON                            = 0x90,    ///< Note On
+            CONTROL_CHANGE                     = 0xB0,    ///< Control Change / Channel Mode
+            PROGRAM_CHANGE                     = 0xC0,    ///< Program Change
+            AFTER_TOUCH_CHANNEL                = 0xD0,    ///< Channel (monophonic) AfterTouch
+            AFTER_TOUCH_POLY                   = 0xA0,    ///< Polyphonic AfterTouch
+            PITCH_BEND                         = 0xE0,    ///< Pitch Bend
+            SYS_EX                             = 0xF0,    ///< System Exclusive
+            SYS_COMMON_TIME_CODE_QUARTER_FRAME = 0xF1,    ///< System Common - MIDI Time Code Quarter Frame
+            SYS_COMMON_SONG_POSITION           = 0xF2,    ///< System Common - Song Position Pointer
+            SYS_COMMON_SONG_SELECT             = 0xF3,    ///< System Common - Song Select
+            SYS_COMMON_TUNE_REQUEST            = 0xF6,    ///< System Common - Tune Request
+            SYS_REAL_TIME_CLOCK                = 0xF8,    ///< System Real Time - Timing Clock
+            SYS_REAL_TIME_START                = 0xFA,    ///< System Real Time - Start
+            SYS_REAL_TIME_CONTINUE             = 0xFB,    ///< System Real Time - Continue
+            SYS_REAL_TIME_STOP                 = 0xFC,    ///< System Real Time - Stop
+            SYS_REAL_TIME_ACTIVE_SENSING       = 0xFE,    ///< System Real Time - Active Sensing
+            SYS_REAL_TIME_SYSTEM_RESET         = 0xFF,    ///< System Real Time - System Reset
+            MMC_PLAY                           = 0x02,
+            MMC_STOP                           = 0x01,
+            MMC_PAUSE                          = 0x09,
+            MMC_RECORD_START                   = 0x06,
+            MMC_RECORD_STOP                    = 0x07,
+            NRPN_7BIT                          = 0x99,
+            NRPN_14BIT                         = 0x38,
+            CONTROL_CHANGE_14BIT               = 0x32,
+            INVALID                            = 0x00    ///< For notifying errors
         };
 
         /// Holds various types of MIDI Note Off message
         enum class noteOffType_t : uint8_t
         {
-            noteOnZeroVel,
-            standardNoteOff
+            NOTE_ON_ZERO_VEL,
+            STANDARD_NOTE_OFF
         };
 
         /// List off all possible MIDI notes.
@@ -102,7 +102,7 @@ namespace MIDIlib
         struct message_t
         {
             uint8_t       channel                           = 1;
-            messageType_t type                              = messageType_t::invalid;
+            messageType_t type                              = messageType_t::INVALID;
             uint8_t       data1                             = 0;
             uint8_t       data2                             = 0;
             uint8_t       sysexArray[MIDI_SYSEX_ARRAY_SIZE] = {};
@@ -204,11 +204,8 @@ namespace MIDIlib
             virtual bool read(uint8_t& data) = 0;
         };
 
-        /// Maximum 7-bit MIDI value.
-        static constexpr uint8_t MIDI_7_BIT_VALUE_MAX = 127;
-
-        /// Maximum 14-bit MIDI value.
-        static constexpr uint16_t MIDI_14_BIT_VALUE_MAX = 16383;
+        static constexpr uint8_t  MIDI_7BIT_VALUE_MAX  = 127;
+        static constexpr uint16_t MIDI_14BIT_VALUE_MAX = 16383;
 
         Base(Transport& transport)
             : _transport(transport)
@@ -276,7 +273,7 @@ namespace MIDIlib
         uint8_t                                     _mPendingMessage[3]           = {};
         uint16_t                                    _pendingMessageExpectedLenght = 0;
         uint16_t                                    _pendingMessageIndex          = 0;
-        noteOffType_t                               _noteOffMode                  = noteOffType_t::noteOnZeroVel;
+        noteOffType_t                               _noteOffMode                  = noteOffType_t::NOTE_ON_ZERO_VEL;
         std::array<Thru*, MIDI_MAX_THRU_INTERFACES> _thruInterface                = {};
     };
 }    // namespace MIDIlib

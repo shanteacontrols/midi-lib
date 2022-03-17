@@ -40,7 +40,7 @@ bool USBMIDI::Transport::deInit()
 bool USBMIDI::Transport::beginTransmission(messageType_t type)
 {
     _activeType          = type;
-    _txBuffer[USB_EVENT] = usbMIDIHeader(_cin, static_cast<uint8_t>(type));
+    _txBuffer[USB_EVENT] = usbMIDIHeader(CIN, static_cast<uint8_t>(type));
     _txIndex             = 0;
 
     return true;
@@ -50,14 +50,14 @@ bool USBMIDI::Transport::write(uint8_t data)
 {
     bool returnValue = true;
 
-    if (_activeType != messageType_t::systemExclusive)
+    if (_activeType != messageType_t::SYS_EX)
     {
         _txBuffer[_txIndex + 1] = data;
     }
     else if (data == 0xF0)
     {
         // start of sysex
-        _txBuffer[USB_EVENT] = usbMIDIHeader(_cin, static_cast<uint8_t>(systemEvent_t::sysExStart));
+        _txBuffer[USB_EVENT] = usbMIDIHeader(CIN, static_cast<uint8_t>(systemEvent_t::SYS_EX_START));
         _txBuffer[USB_DATA1] = data;
     }
     else
@@ -70,7 +70,7 @@ bool USBMIDI::Transport::write(uint8_t data)
             // this event has sysExStop1byte as event index with added count of how many bytes there are in USB packet.
             // Add 0x10 since event is shifted 4 bytes to the left.
 
-            _txBuffer[USB_EVENT] = usbMIDIHeader(_cin, (static_cast<uint8_t>(systemEvent_t::sysExStop1byte) + (0x10 * i)));
+            _txBuffer[USB_EVENT] = usbMIDIHeader(CIN, (static_cast<uint8_t>(systemEvent_t::SYS_EX_STOP1BYTE) + (0x10 * i)));
         }
 
         switch (i)
@@ -135,20 +135,20 @@ bool USBMIDI::Transport::read(uint8_t& data)
         switch (midiMessage)
         {
         // 1 byte messages
-        case static_cast<uint8_t>(systemEvent_t::sysCommon1byte):
-        case static_cast<uint8_t>(systemEvent_t::singleByte):
+        case static_cast<uint8_t>(systemEvent_t::SYS_COMMON1BYTE):
+        case static_cast<uint8_t>(systemEvent_t::SINGLE_BYTE):
         {
             _rxBuffer[_rxIndex++] = packet[USB_DATA1];
         }
         break;
 
         // 2 byte messages
-        case static_cast<uint8_t>(systemEvent_t::sysCommon2byte):
-        case static_cast<uint8_t>(messageType_t::programChange):
-        case static_cast<uint8_t>(messageType_t::afterTouchChannel):
-        case static_cast<uint8_t>(messageType_t::sysCommonTimeCodeQuarterFrame):
-        case static_cast<uint8_t>(messageType_t::sysCommonSongSelect):
-        case static_cast<uint8_t>(systemEvent_t::sysExStop2byte):
+        case static_cast<uint8_t>(systemEvent_t::SYS_COMMON2BYTE):
+        case static_cast<uint8_t>(messageType_t::PROGRAM_CHANGE):
+        case static_cast<uint8_t>(messageType_t::AFTER_TOUCH_CHANNEL):
+        case static_cast<uint8_t>(messageType_t::SYS_COMMON_TIME_CODE_QUARTER_FRAME):
+        case static_cast<uint8_t>(messageType_t::SYS_COMMON_SONG_SELECT):
+        case static_cast<uint8_t>(systemEvent_t::SYS_EX_STOP2BYTE):
         {
             _rxBuffer[_rxIndex++] = packet[USB_DATA2];
             _rxBuffer[_rxIndex++] = packet[USB_DATA1];
@@ -156,14 +156,14 @@ bool USBMIDI::Transport::read(uint8_t& data)
         break;
 
         // 3 byte messages
-        case static_cast<uint8_t>(messageType_t::noteOn):
-        case static_cast<uint8_t>(messageType_t::noteOff):
-        case static_cast<uint8_t>(messageType_t::controlChange):
-        case static_cast<uint8_t>(messageType_t::pitchBend):
-        case static_cast<uint8_t>(messageType_t::afterTouchPoly):
-        case static_cast<uint8_t>(messageType_t::sysCommonSongPosition):
-        case static_cast<uint8_t>(systemEvent_t::sysExStart):
-        case static_cast<uint8_t>(systemEvent_t::sysExStop3byte):
+        case static_cast<uint8_t>(messageType_t::NOTE_ON):
+        case static_cast<uint8_t>(messageType_t::NOTE_OFF):
+        case static_cast<uint8_t>(messageType_t::CONTROL_CHANGE):
+        case static_cast<uint8_t>(messageType_t::PITCH_BEND):
+        case static_cast<uint8_t>(messageType_t::AFTER_TOUCH_POLY):
+        case static_cast<uint8_t>(messageType_t::SYS_COMMON_SONG_POSITION):
+        case static_cast<uint8_t>(systemEvent_t::SYS_EX_START):
+        case static_cast<uint8_t>(systemEvent_t::SYS_EX_STOP3BYTE):
         {
             _rxBuffer[_rxIndex++] = packet[USB_DATA3];
             _rxBuffer[_rxIndex++] = packet[USB_DATA2];

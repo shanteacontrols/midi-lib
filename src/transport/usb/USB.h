@@ -61,7 +61,7 @@ namespace MIDIlib
             public:
             Transport(USBMIDI& usbMIDI, uint8_t cin)
                 : _usbMIDI(usbMIDI)
-                , _cin(cin)
+                , CIN(cin)
             {}
 
             bool init() override;
@@ -81,23 +81,23 @@ namespace MIDIlib
             /// Enumeration holding USB-specific events for SysEx/System Common messages.
             enum class systemEvent_t : uint8_t
             {
-                sysCommon1byte = 0x50,
-                sysCommon2byte = 0x20,
-                sysCommon3byte = 0x30,
-                singleByte     = 0xF0,
-                sysExStart     = 0x40,
-                sysExStop1byte = 0x50,
-                sysExStop2byte = 0x60,
-                sysExStop3byte = 0x70
+                SYS_COMMON1BYTE  = 0x50,
+                SYS_COMMON2BYTE  = 0x20,
+                SYS_COMMON3BYTE  = 0x30,
+                SINGLE_BYTE      = 0xF0,
+                SYS_EX_START     = 0x40,
+                SYS_EX_STOP1BYTE = 0x50,
+                SYS_EX_STOP2BYTE = 0x60,
+                SYS_EX_STOP3BYTE = 0x70
             };
 
             USBMIDI&        _usbMIDI;
-            const uint8_t   _cin;
+            const uint8_t   CIN;
             uint8_t         _rxIndex     = 0;
             uint8_t         _rxBuffer[3] = {};
             usbMIDIPacket_t _txBuffer    = {};
             uint8_t         _txIndex     = 0;
-            messageType_t   _activeType  = messageType_t::invalid;
+            messageType_t   _activeType  = messageType_t::INVALID;
         } _transport;
 
         HWA& _hwa;
