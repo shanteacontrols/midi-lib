@@ -3,8 +3,7 @@ build/
 Documentation/*
 *compile_commands.json
 *ipch*
-*Objects.mk
-*.cortex-debug*
+*Objects.mk*
 *.profraw
-**/.clangd/*
-**/clangd/*
+**/tests/test_run/*
+**/.cache/*
