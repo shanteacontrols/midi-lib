@@ -1,0 +1,44 @@
+name: Build+Test
+
+on: [push]
+
+jobs:
+  build:
+    name: Build library
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Pull the repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+          submodules: false
+      - name: Prepare env
+        run: |
+          sudo apt update
+          sudo apt install -y clang
+      - name: Build
+        run: |
+          cd src/
+          make
+  test:
+    name: Run tests
+    runs-on: ubuntu-20.04
+    steps:
+       - name: Pull the repository
+         uses: actions/checkout@v2
+         with:
+           fetch-depth: 1
+       - name: Prepare env
+         run: |
+          sudo apt update
+          sudo apt install -y \
+          clang \
+          libgtest-dev \
+          libgmock-dev \
+          libgoogle-glog-dev
+       - name: Build
+         run: |
+           cd tests
+           make pre-build
+           make
+           make exec
