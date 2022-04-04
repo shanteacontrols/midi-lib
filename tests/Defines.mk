@@ -1,0 +1,3 @@
+#common defines
+DEFINES += \
+TEST
