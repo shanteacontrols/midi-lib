@@ -14,10 +14,10 @@
         {
             "id": "test",
             "description": "Select test to compile",
-            "default": "all",
+            "default": "ble",
             "type": "pickString",
             "options": [
-                "all",
+                "ble",
             ]
         }
     ]
