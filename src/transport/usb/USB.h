@@ -43,10 +43,10 @@ namespace MIDIlib
         class HWA
         {
             public:
-            virtual bool init()                        = 0;
-            virtual bool deInit()                      = 0;
-            virtual bool write(usbMIDIPacket_t packet) = 0;
-            virtual bool read(usbMIDIPacket_t& packet) = 0;
+            virtual bool init()                         = 0;
+            virtual bool deInit()                       = 0;
+            virtual bool write(usbMIDIPacket_t& packet) = 0;
+            virtual bool read(usbMIDIPacket_t& packet)  = 0;
         };
 
         USBMIDI(HWA& hwa, uint8_t cin = 0)

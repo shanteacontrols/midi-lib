@@ -31,10 +31,10 @@ namespace MIDIlib
         class HWA
         {
             public:
-            virtual bool init()              = 0;
-            virtual bool deInit()            = 0;
-            virtual bool write(uint8_t data) = 0;
-            virtual bool read(uint8_t& data) = 0;
+            virtual bool init()               = 0;
+            virtual bool deInit()             = 0;
+            virtual bool write(uint8_t& data) = 0;
+            virtual bool read(uint8_t& data)  = 0;
         };
 
         SerialMIDI(HWA& hwa)
