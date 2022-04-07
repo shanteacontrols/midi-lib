@@ -774,6 +774,8 @@ bool MIDIlib::Base::parse()
             _message.data2 = 0;
         }
 
+        _message.length = _pendingMessageExpectedLength;
+
         // reset local variables
         _pendingMessageIndex          = 0;
         _pendingMessageExpectedLength = 0;
