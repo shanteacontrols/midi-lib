@@ -271,7 +271,7 @@ namespace MIDIlib
         uint8_t                                     _mRunningStatusRX             = 0;
         uint8_t                                     _mRunningStatusTX             = 0;
         uint8_t                                     _mPendingMessage[3]           = {};
-        uint16_t                                    _pendingMessageExpectedLenght = 0;
+        uint16_t                                    _pendingMessageExpectedLength = 0;
         uint16_t                                    _pendingMessageIndex          = 0;
         noteOffType_t                               _noteOffMode                  = noteOffType_t::NOTE_ON_ZERO_VEL;
         std::array<Thru*, MIDI_MAX_THRU_INTERFACES> _thruInterface                = {};

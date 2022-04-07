@@ -61,7 +61,7 @@ bool MIDIlib::Base::initialized()
 void MIDIlib::Base::reset()
 {
     _mRunningStatusRX             = 0;
-    _pendingMessageExpectedLenght = 0;
+    _pendingMessageExpectedLength = 0;
     _pendingMessageIndex          = 0;
 }
 
@@ -593,7 +593,7 @@ bool MIDIlib::Base::parse()
             // do not reset all input attributes: running status must remain unchanged
             // we still need to reset these
             _pendingMessageIndex          = 0;
-            _pendingMessageExpectedLenght = 0;
+            _pendingMessageExpectedLength = 0;
 
             return true;
         }
@@ -605,7 +605,7 @@ bool MIDIlib::Base::parse()
         case messageType_t::SYS_COMMON_TIME_CODE_QUARTER_FRAME:
         case messageType_t::SYS_COMMON_SONG_SELECT:
         {
-            _pendingMessageExpectedLenght = 2;
+            _pendingMessageExpectedLength = 2;
         }
         break;
 
@@ -617,14 +617,14 @@ bool MIDIlib::Base::parse()
         case messageType_t::AFTER_TOUCH_POLY:
         case messageType_t::SYS_COMMON_SONG_POSITION:
         {
-            _pendingMessageExpectedLenght = 3;
+            _pendingMessageExpectedLength = 3;
         }
         break;
 
         case messageType_t::SYS_EX:
         {
             // the message can be any length between 3 and MIDI_SYSEX_ARRAY_SIZE
-            _pendingMessageExpectedLenght = MIDI_SYSEX_ARRAY_SIZE;
+            _pendingMessageExpectedLength = MIDI_SYSEX_ARRAY_SIZE;
             _mRunningStatusRX             = static_cast<uint8_t>(messageType_t::INVALID);
             _message.sysexArray[0]        = static_cast<uint8_t>(messageType_t::SYS_EX);
         }
@@ -640,7 +640,7 @@ bool MIDIlib::Base::parse()
         break;
         }
 
-        if (_pendingMessageIndex >= (_pendingMessageExpectedLenght - 1))
+        if (_pendingMessageIndex >= (_pendingMessageExpectedLength - 1))
         {
             // reception complete
             _message.type                 = PENDING_TYPE;
@@ -649,7 +649,7 @@ bool MIDIlib::Base::parse()
             _message.data2                = 0;
             _message.length               = 1;
             _pendingMessageIndex          = 0;
-            _pendingMessageExpectedLenght = 0;
+            _pendingMessageExpectedLength = 0;
             _message.valid                = true;
 
             return true;
@@ -740,7 +740,7 @@ bool MIDIlib::Base::parse()
     }
 
     // now we are going to check if we have reached the end of the message
-    if (_pendingMessageIndex >= (_pendingMessageExpectedLenght - 1))
+    if (_pendingMessageIndex >= (_pendingMessageExpectedLength - 1))
     {
         //"FML" case: fall down here with an overflown SysEx..
         // This means we received the last possible data byte that can fit the buffer.
@@ -765,7 +765,7 @@ bool MIDIlib::Base::parse()
         _message.data1 = _mPendingMessage[1];
 
         // save data2 only if applicable
-        if (_pendingMessageExpectedLenght == 3)
+        if (_pendingMessageExpectedLength == 3)
         {
             _message.data2 = _mPendingMessage[2];
         }
@@ -776,7 +776,7 @@ bool MIDIlib::Base::parse()
 
         // reset local variables
         _pendingMessageIndex          = 0;
-        _pendingMessageExpectedLenght = 0;
+        _pendingMessageExpectedLength = 0;
         _message.valid                = true;
 
         // activate running status (if enabled for the received type)
