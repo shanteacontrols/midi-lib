@@ -724,6 +724,15 @@ bool MIDIlib::Base::parse()
         }
         break;
 
+        // start of sysex
+        case 0xF0:
+        {
+            // reset the parsing of sysex
+            _message.sysexArray[0] = static_cast<uint8_t>(messageType_t::SYS_EX);
+            _pendingMessageIndex   = 1;
+        }
+        break;
+
         default:
             break;
         }
