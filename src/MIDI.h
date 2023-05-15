@@ -29,7 +29,7 @@
 /// To override the symbols below, define global symbols with the same name.
 
 #ifndef MIDI_SYSEX_ARRAY_SIZE
-#define MIDI_SYSEX_ARRAY_SIZE 45
+#define MIDI_SYSEX_ARRAY_SIZE 128
 #endif
 
 #ifndef MIDI_MAX_THRU_INTERFACES
