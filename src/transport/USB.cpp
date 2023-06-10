@@ -19,7 +19,7 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "USB.h"
+#include "MIDI/transport/USB.h"
 
 using namespace MIDIlib;
 

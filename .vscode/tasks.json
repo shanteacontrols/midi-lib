@@ -2,23 +2,12 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "[Test] Build single test",
-            "command": "cd tests && make pre-build && make TESTS=${input:test} && cp build/$(make print-TARGET)/src/${input:test}/${input:test}.out build/test.out",
+            "label": "[Build] Tests",
+            "command": "make all",
             "type": "shell",
             "problemMatcher": [
                 "$gcc"
             ]
         },
-    ],
-    "inputs": [
-        {
-            "id": "test",
-            "description": "Select test to compile",
-            "default": "ble",
-            "type": "pickString",
-            "options": [
-                "ble",
-            ]
-        }
     ]
 }

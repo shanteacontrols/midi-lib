@@ -1,6 +1,5 @@
-#include "framework/Framework.h"
-#include "transport/ble/BLE.h"
-#include <vector>
+#include "tests/Common.h"
+#include "MIDI/transport/BLE.h"
 
 using namespace MIDIlib;
 

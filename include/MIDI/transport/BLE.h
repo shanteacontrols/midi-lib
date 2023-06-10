@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "../../MIDI.h"
+#include "MIDI/MIDI.h"
 
 #ifndef MIDI_BLE_MAX_PACKET_SIZE
 #define MIDI_BLE_MAX_PACKET_SIZE 64

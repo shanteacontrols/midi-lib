@@ -19,39 +19,49 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "Serial.h"
+#pragma once
 
-using namespace MIDIlib;
+#include "MIDI/MIDI.h"
 
-bool SerialMIDI::Transport::init()
+namespace MIDIlib
 {
-    _serialMIDI.useRecursiveParsing(true);
-    return _serialMIDI._hwa.init();
-}
+    class SerialMIDI : public Base
+    {
+        public:
+        class HWA
+        {
+            public:
+            virtual bool init()               = 0;
+            virtual bool deInit()             = 0;
+            virtual bool write(uint8_t& data) = 0;
+            virtual bool read(uint8_t& data)  = 0;
+        };
 
-bool SerialMIDI::Transport::deInit()
-{
-    return _serialMIDI._hwa.deInit();
-}
+        SerialMIDI(HWA& hwa)
+            : Base(_transport)
+            , _transport(*this)
+            , _hwa(hwa)
+        {}
 
-bool SerialMIDI::Transport::beginTransmission(messageType_t type)
-{
-    // nothing to do
-    return true;
-}
+        private:
+        class Transport : public Base::Transport
+        {
+            public:
+            Transport(SerialMIDI& serialMIDI)
+                : _serialMIDI(serialMIDI)
+            {}
 
-bool SerialMIDI::Transport::write(uint8_t data)
-{
-    return _serialMIDI._hwa.write(data);
-}
+            bool init() override;
+            bool deInit() override;
+            bool beginTransmission(messageType_t type) override;
+            bool write(uint8_t data) override;
+            bool endTransmission() override;
+            bool read(uint8_t& data) override;
 
-bool SerialMIDI::Transport::endTransmission()
-{
-    // nothing to do
-    return true;
-}
+            private:
+            SerialMIDI& _serialMIDI;
+        } _transport;
 
-bool SerialMIDI::Transport::read(uint8_t& data)
-{
-    return _serialMIDI._hwa.read(data);
-}
+        SerialMIDI::HWA& _hwa;
+    };
+}    // namespace MIDIlib

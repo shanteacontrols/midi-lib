@@ -8,9 +8,9 @@
             "name": "Test",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/tests/build/test.out",
+            "program": "${workspaceFolder}/build/tests/src/test/midi-test",
             "args": [],
-            "stopAtEntry": false,
+            "stopAtEntry": true,
             "environment": [],
             "externalConsole": false,
             "cwd": "${workspaceFolder}",
@@ -22,7 +22,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "[Test] Build single test"
+            "preLaunchTask": "[Build] Tests"
         }
     ]
 }

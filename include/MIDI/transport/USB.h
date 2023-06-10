@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "../../MIDI.h"
+#include "MIDI/MIDI.h"
 #include <array>
 #include <inttypes.h>
 
