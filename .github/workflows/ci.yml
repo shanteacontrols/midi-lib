@@ -6,39 +6,17 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-22.04
+    container:
+      image: paradajz168/opendeck-dev:latest
+      options: --user root
     steps:
+      - name: Mark repository as safe
+        run: git config --global --add safe.directory /__w/midi-lib/midi-lib
       - name: Pull the repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 1
           submodules: false
-      - name: Prepare env
-        run: |
-          sudo apt update
-          sudo apt install --no-install-recommends -y \
-          ca-certificates \
-          clang \
-          cmake \
-          git \
-          make
-          git clone https://github.com/google/googletest.git -b release-1.11.0 && \
-          cd googletest && \
-          mkdir build && \
-          cd build && \
-          cmake .. && \
-          make && \
-          sudo make install && \
-          cd ../../ && \
-          rm -rf googletest
-          git clone https://github.com/google/glog.git && \
-          cd glog && \
-          git checkout v0.6.0 && \
-          cmake -S . -B build -G "Unix Makefiles" && \
-          cmake --build build && \
-          sudo cmake --build build --target install && \
-          cd ../ && \
-          rm -rf glog && \
-          sudo ldconfig
       - name: Check formatting
         run: |
           make format
