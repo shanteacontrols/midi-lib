@@ -1,19 +1,19 @@
-add_executable(midi-test
+add_executable(libmidi-test
     test.cpp
 )
 
-target_link_libraries(midi-test
+target_link_libraries(libmidi-test
     PRIVATE
-    midi-test-common
-    midi-lib
+    liblibmidi-test-common
+    libmidi
 )
 
-target_compile_definitions(midi-test
+target_compile_definitions(libmidi-test
     PRIVATE
     TEST
 )
 
-target_compile_definitions(midi-lib
+target_compile_definitions(libmidi
     PUBLIC
     EMU_EEPROM_PAGE_SIZE=128
 )
@@ -24,7 +24,7 @@ add_test(
     "${CMAKE_COMMAND}"
     --build "${CMAKE_BINARY_DIR}"
     --config "$<CONFIG>"
-    --target midi-test
+    --target libmidi-test
 )
 
 set_tests_properties(test_build
@@ -35,7 +35,7 @@ set_tests_properties(test_build
 
 add_test(
     NAME test
-    COMMAND $<TARGET_FILE:midi-test>
+    COMMAND $<TARGET_FILE:libmidi-test>
 )
 
 set_tests_properties(test

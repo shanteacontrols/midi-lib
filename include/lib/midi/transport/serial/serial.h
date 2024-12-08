@@ -21,34 +21,26 @@
 
 #pragma once
 
-#include "MIDI/MIDI.h"
+#include "common.h"
+#include "lib/midi/midi.h"
 
-namespace MIDIlib
+namespace lib::midi::serial
 {
-    class SerialMIDI : public Base
+    class Serial : public Base
     {
         public:
-        class HWA
-        {
-            public:
-            virtual bool init()               = 0;
-            virtual bool deInit()             = 0;
-            virtual bool write(uint8_t& data) = 0;
-            virtual bool read(uint8_t& data)  = 0;
-        };
-
-        SerialMIDI(HWA& hwa)
+        Serial(Hwa& hwa)
             : Base(_transport)
             , _transport(*this)
             , _hwa(hwa)
         {}
 
         private:
-        class Transport : public Base::Transport
+        class Transport : public lib::midi::Transport
         {
             public:
-            Transport(SerialMIDI& serialMIDI)
-                : _serialMIDI(serialMIDI)
+            Transport(Serial& serial)
+                : _serial(serial)
             {}
 
             bool init() override;
@@ -59,9 +51,9 @@ namespace MIDIlib
             bool read(uint8_t& data) override;
 
             private:
-            SerialMIDI& _serialMIDI;
+            Serial& _serial;
         } _transport;
 
-        SerialMIDI::HWA& _hwa;
+        Hwa& _hwa;
     };
-}    // namespace MIDIlib
+}    // namespace lib::midi::serial

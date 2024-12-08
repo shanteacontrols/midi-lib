@@ -1,25 +1,26 @@
-#include "tests/Common.h"
-#include "MIDI/transport/BLE.h"
+#include "tests/common.h"
+#include "lib/midi/transport/ble/ble.h"
 
-using namespace MIDIlib;
+using namespace lib::midi;
+using namespace ble;
 
 namespace
 {
-    class BLEMIDITest : public ::testing::Test
+    class BleMidiTest : public ::testing::Test
     {
         protected:
         void SetUp()
         {
-            ASSERT_TRUE(_bleMIDI.init());
+            ASSERT_TRUE(_ble.init());
         }
 
         void TearDown()
         {}
 
-        class BLEHWA : public BLEMIDI::HWA
+        class BleHwa : public Hwa
         {
             public:
-            BLEHWA() = default;
+            BleHwa() = default;
 
             bool init() override
             {
@@ -31,13 +32,13 @@ namespace
                 return true;
             }
 
-            bool write(BLEMIDI::bleMIDIPacket_t& packet) override
+            bool write(Packet& packet) override
             {
                 _writePackets.push_back(packet);
                 return true;
             }
 
-            bool read(BLEMIDI::bleMIDIPacket_t& packet) override
+            bool read(Packet& packet) override
             {
                 if (_readPackets.size())
                 {
@@ -55,18 +56,18 @@ namespace
                 return 0x80;
             }
 
-            std::vector<BLEMIDI::bleMIDIPacket_t> _writePackets;
-            std::vector<BLEMIDI::bleMIDIPacket_t> _readPackets;
+            std::vector<Packet> _writePackets = {};
+            std::vector<Packet> _readPackets  = {};
         };
 
-        BLEHWA  _hwa;
-        BLEMIDI _bleMIDI = BLEMIDI(_hwa);
+        BleHwa _hwa;
+        Ble    _ble = Ble(_hwa);
     };
 }    // namespace
 
-TEST_F(BLEMIDITest, ReadSingleMessage)
+TEST_F(BleMidiTest, ReadSingleMessage)
 {
-    BLEMIDI::bleMIDIPacket_t packet;
+    Packet packet = {};
 
     packet.data.at(packet.size++) = 0x80;    // header
     packet.data.at(packet.size++) = 0x80;    // timestamp
@@ -76,18 +77,18 @@ TEST_F(BLEMIDITest, ReadSingleMessage)
 
     _hwa._readPackets.push_back(packet);
 
-    ASSERT_TRUE(_bleMIDI.read());
-    EXPECT_EQ(1, _bleMIDI.message().channel);
-    EXPECT_EQ(MIDIlib::Base::messageType_t::NOTE_ON, _bleMIDI.message().type);
-    EXPECT_EQ(0, _bleMIDI.message().data1);
-    EXPECT_EQ(0x7F, _bleMIDI.message().data2);
+    ASSERT_TRUE(_ble.read());
+    EXPECT_EQ(1, _ble.message().channel);
+    EXPECT_EQ(messageType_t::NOTE_ON, _ble.message().type);
+    EXPECT_EQ(0, _ble.message().data1);
+    EXPECT_EQ(0x7F, _ble.message().data2);
 
-    ASSERT_FALSE(_bleMIDI.read());
+    ASSERT_FALSE(_ble.read());
 }
 
-TEST_F(BLEMIDITest, ReadTwoMessages)
+TEST_F(BleMidiTest, ReadTwoMessages)
 {
-    BLEMIDI::bleMIDIPacket_t packet;
+    Packet packet = {};
 
     packet.data.at(packet.size++) = 0x80;    // header
     packet.data.at(packet.size++) = 0x80;    // timestamp
@@ -101,24 +102,24 @@ TEST_F(BLEMIDITest, ReadTwoMessages)
 
     _hwa._readPackets.push_back(packet);
 
-    ASSERT_TRUE(_bleMIDI.read());
-    EXPECT_EQ(1, _bleMIDI.message().channel);
-    EXPECT_EQ(MIDIlib::Base::messageType_t::NOTE_ON, _bleMIDI.message().type);
-    EXPECT_EQ(0, _bleMIDI.message().data1);
-    EXPECT_EQ(0x7F, _bleMIDI.message().data2);
+    ASSERT_TRUE(_ble.read());
+    EXPECT_EQ(1, _ble.message().channel);
+    EXPECT_EQ(messageType_t::NOTE_ON, _ble.message().type);
+    EXPECT_EQ(0, _ble.message().data1);
+    EXPECT_EQ(0x7F, _ble.message().data2);
 
-    ASSERT_TRUE(_bleMIDI.read());
-    EXPECT_EQ(2, _bleMIDI.message().channel);
-    EXPECT_EQ(MIDIlib::Base::messageType_t::NOTE_ON, _bleMIDI.message().type);
-    EXPECT_EQ(0, _bleMIDI.message().data1);
-    EXPECT_EQ(0x7F, _bleMIDI.message().data2);
+    ASSERT_TRUE(_ble.read());
+    EXPECT_EQ(2, _ble.message().channel);
+    EXPECT_EQ(messageType_t::NOTE_ON, _ble.message().type);
+    EXPECT_EQ(0, _ble.message().data1);
+    EXPECT_EQ(0x7F, _ble.message().data2);
 
-    ASSERT_FALSE(_bleMIDI.read());
+    ASSERT_FALSE(_ble.read());
 }
 
-TEST_F(BLEMIDITest, ReadTwoMessagesWithRunningStatusNoTimestampBetween)
+TEST_F(BleMidiTest, ReadTwoMessagesWithRunningStatusNoTimestampBetween)
 {
-    BLEMIDI::bleMIDIPacket_t packet;
+    Packet packet = {};
 
     packet.data.at(packet.size++) = 0x80;    // header
     packet.data.at(packet.size++) = 0x80;    // timestamp
@@ -130,24 +131,24 @@ TEST_F(BLEMIDITest, ReadTwoMessagesWithRunningStatusNoTimestampBetween)
 
     _hwa._readPackets.push_back(packet);
 
-    ASSERT_TRUE(_bleMIDI.read());
-    EXPECT_EQ(1, _bleMIDI.message().channel);
-    EXPECT_EQ(MIDIlib::Base::messageType_t::NOTE_ON, _bleMIDI.message().type);
-    EXPECT_EQ(0, _bleMIDI.message().data1);
-    EXPECT_EQ(0x7F, _bleMIDI.message().data2);
+    ASSERT_TRUE(_ble.read());
+    EXPECT_EQ(1, _ble.message().channel);
+    EXPECT_EQ(messageType_t::NOTE_ON, _ble.message().type);
+    EXPECT_EQ(0, _ble.message().data1);
+    EXPECT_EQ(0x7F, _ble.message().data2);
 
-    ASSERT_TRUE(_bleMIDI.read());
-    EXPECT_EQ(1, _bleMIDI.message().channel);
-    EXPECT_EQ(MIDIlib::Base::messageType_t::NOTE_ON, _bleMIDI.message().type);
-    EXPECT_EQ(0, _bleMIDI.message().data1);
-    EXPECT_EQ(0x7E, _bleMIDI.message().data2);
+    ASSERT_TRUE(_ble.read());
+    EXPECT_EQ(1, _ble.message().channel);
+    EXPECT_EQ(messageType_t::NOTE_ON, _ble.message().type);
+    EXPECT_EQ(0, _ble.message().data1);
+    EXPECT_EQ(0x7E, _ble.message().data2);
 
-    ASSERT_FALSE(_bleMIDI.read());
+    ASSERT_FALSE(_ble.read());
 }
 
-TEST_F(BLEMIDITest, ReadTwoMessagesWithRunningStatusTimestampBetween)
+TEST_F(BleMidiTest, ReadTwoMessagesWithRunningStatusTimestampBetween)
 {
-    BLEMIDI::bleMIDIPacket_t packet;
+    Packet packet = {};
 
     packet.data.at(packet.size++) = 0x80;    // header
     packet.data.at(packet.size++) = 0x80;    // timestamp
@@ -160,24 +161,24 @@ TEST_F(BLEMIDITest, ReadTwoMessagesWithRunningStatusTimestampBetween)
 
     _hwa._readPackets.push_back(packet);
 
-    ASSERT_TRUE(_bleMIDI.read());
-    EXPECT_EQ(1, _bleMIDI.message().channel);
-    EXPECT_EQ(MIDIlib::Base::messageType_t::NOTE_ON, _bleMIDI.message().type);
-    EXPECT_EQ(0, _bleMIDI.message().data1);
-    EXPECT_EQ(0x7F, _bleMIDI.message().data2);
+    ASSERT_TRUE(_ble.read());
+    EXPECT_EQ(1, _ble.message().channel);
+    EXPECT_EQ(messageType_t::NOTE_ON, _ble.message().type);
+    EXPECT_EQ(0, _ble.message().data1);
+    EXPECT_EQ(0x7F, _ble.message().data2);
 
-    ASSERT_TRUE(_bleMIDI.read());
-    EXPECT_EQ(1, _bleMIDI.message().channel);
-    EXPECT_EQ(MIDIlib::Base::messageType_t::NOTE_ON, _bleMIDI.message().type);
-    EXPECT_EQ(0, _bleMIDI.message().data1);
-    EXPECT_EQ(0x7E, _bleMIDI.message().data2);
+    ASSERT_TRUE(_ble.read());
+    EXPECT_EQ(1, _ble.message().channel);
+    EXPECT_EQ(messageType_t::NOTE_ON, _ble.message().type);
+    EXPECT_EQ(0, _ble.message().data1);
+    EXPECT_EQ(0x7E, _ble.message().data2);
 
-    ASSERT_FALSE(_bleMIDI.read());
+    ASSERT_FALSE(_ble.read());
 }
 
-TEST_F(BLEMIDITest, ReadSysEx1Packet)
+TEST_F(BleMidiTest, ReadSysEx1Packet)
 {
-    BLEMIDI::bleMIDIPacket_t packet;
+    Packet packet = {};
 
     packet.data.at(packet.size++) = 0x80;
     packet.data.at(packet.size++) = 0x80;
@@ -193,15 +194,15 @@ TEST_F(BLEMIDITest, ReadSysEx1Packet)
 
     _hwa._readPackets.push_back(packet);
 
-    ASSERT_TRUE(_bleMIDI.read());
+    ASSERT_TRUE(_ble.read());
 }
 
-TEST_F(BLEMIDITest, ReadSysEx2Packet)
+TEST_F(BleMidiTest, ReadSysEx2Packet)
 {
     // packet length is limited to 16 bytes for these tests
 
-    BLEMIDI::bleMIDIPacket_t packet1;
-    BLEMIDI::bleMIDIPacket_t packet2;
+    Packet packet1 = {};
+    Packet packet2 = {};
 
     packet1.data.at(packet1.size++) = 0x80;
     packet1.data.at(packet1.size++) = 0x80;
@@ -230,17 +231,17 @@ TEST_F(BLEMIDITest, ReadSysEx2Packet)
 
     _hwa._readPackets.push_back(packet2);
 
-    ASSERT_TRUE(_bleMIDI.read());
-    EXPECT_EQ(MIDIlib::Base::messageType_t::SYS_EX, _bleMIDI.message().type);
-    EXPECT_EQ(17, _bleMIDI.message().length);
+    ASSERT_TRUE(_ble.read());
+    EXPECT_EQ(messageType_t::SYS_EX, _ble.message().type);
+    EXPECT_EQ(17, _ble.message().length);
 }
 
-TEST_F(BLEMIDITest, ReadSysEx2PacketEdgeCase)
+TEST_F(BleMidiTest, ReadSysEx2PacketEdgeCase)
 {
     // packet length is limited to 16 bytes for these tests
 
-    BLEMIDI::bleMIDIPacket_t packet1;
-    BLEMIDI::bleMIDIPacket_t packet2;
+    Packet packet1 = {};
+    Packet packet2 = {};
 
     packet1.data.at(packet1.size++) = 0x80;
     packet1.data.at(packet1.size++) = 0x80;
@@ -268,18 +269,18 @@ TEST_F(BLEMIDITest, ReadSysEx2PacketEdgeCase)
 
     _hwa._readPackets.push_back(packet2);
 
-    ASSERT_TRUE(_bleMIDI.read());
-    EXPECT_EQ(MIDIlib::Base::messageType_t::SYS_EX, _bleMIDI.message().type);
-    EXPECT_EQ(15, _bleMIDI.message().length);
+    ASSERT_TRUE(_ble.read());
+    EXPECT_EQ(messageType_t::SYS_EX, _ble.message().type);
+    EXPECT_EQ(15, _ble.message().length);
 }
 
-TEST_F(BLEMIDITest, ReadSysEx3Packet)
+TEST_F(BleMidiTest, ReadSysEx3Packet)
 {
     // packet length is limited to 16 bytes for these tests
 
-    BLEMIDI::bleMIDIPacket_t packet1;
-    BLEMIDI::bleMIDIPacket_t packet2;
-    BLEMIDI::bleMIDIPacket_t packet3;
+    Packet packet1 = {};
+    Packet packet2 = {};
+    Packet packet3 = {};
 
     packet1.data.at(packet1.size++) = 0x80;
     packet1.data.at(packet1.size++) = 0x80;
@@ -325,6 +326,6 @@ TEST_F(BLEMIDITest, ReadSysEx3Packet)
 
     _hwa._readPackets.push_back(packet3);
 
-    ASSERT_TRUE(_bleMIDI.read());
-    EXPECT_EQ(MIDIlib::Base::messageType_t::SYS_EX, _bleMIDI.message().type);
+    ASSERT_TRUE(_ble.read());
+    EXPECT_EQ(messageType_t::SYS_EX, _ble.message().type);
 }

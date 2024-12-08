@@ -19,25 +19,25 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "MIDI/transport/BLE.h"
+#include "lib/midi/transport/ble/ble.h"
 
-using namespace MIDIlib;
+using namespace lib::midi::ble;
 
-bool BLEMIDI::Transport::init()
+bool Ble::Transport::init()
 {
-    _bleMIDI.useRecursiveParsing(true);
-    return _bleMIDI._hwa.init();
+    _ble.useRecursiveParsing(true);
+    return _ble._hwa.init();
 }
 
-bool BLEMIDI::Transport::deInit()
+bool Ble::Transport::deInit()
 {
-    return _bleMIDI._hwa.deInit();
+    return _ble._hwa.deInit();
 }
 
-bool BLEMIDI::Transport::beginTransmission(messageType_t type)
+bool Ble::Transport::beginTransmission(messageType_t type)
 {
     // timestamp is 13-bit according to midi ble spec
-    auto time = _bleMIDI._hwa.time() & 0x01FFF;
+    auto time = _ble._hwa.time() & 0x01FFF;
 
     _txBuffer.data[0] = (time >> 7) | 0x80;      // 6 bits plus MSB
     _txBuffer.data[1] = (time & 0x7F) | 0x80;    // 7 bits plus MSB
@@ -47,13 +47,13 @@ bool BLEMIDI::Transport::beginTransmission(messageType_t type)
     return true;
 }
 
-bool BLEMIDI::Transport::write(uint8_t data)
+bool Ble::Transport::write(uint8_t data)
 {
     _txBuffer.data[_txBuffer.size++] = data;
 
     if (_txBuffer.size >= _txBuffer.data.size())
     {
-        bool retVal    = _bleMIDI._hwa.write(_txBuffer);
+        bool retVal    = _ble._hwa.write(_txBuffer);
         _txBuffer.size = 1;    // keep header
         return retVal;
     }
@@ -61,18 +61,18 @@ bool BLEMIDI::Transport::write(uint8_t data)
     return true;
 }
 
-bool BLEMIDI::Transport::endTransmission()
+bool Ble::Transport::endTransmission()
 {
-    return _bleMIDI._hwa.write(_txBuffer);
+    return _ble._hwa.write(_txBuffer);
 }
 
-bool BLEMIDI::Transport::read(uint8_t& data)
+bool Ble::Transport::read(uint8_t& data)
 {
     if (!_rxIndex)
     {
-        bleMIDIPacket_t packet;
+        Packet packet;
 
-        if (!_bleMIDI._hwa.read(packet))
+        if (!_ble._hwa.read(packet))
         {
             return false;
         }

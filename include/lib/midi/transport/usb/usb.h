@@ -21,46 +21,26 @@
 
 #pragma once
 
-#include "MIDI/MIDI.h"
-#include <array>
-#include <inttypes.h>
+#include "common.h"
+#include "lib/midi/midi.h"
 
-namespace MIDIlib
+namespace lib::midi::usb
 {
-    class USBMIDI : public Base
+    class Usb : public Base
     {
         public:
-        using usbMIDIPacket_t = std::array<uint8_t, 4>;
-
-        enum usbPacketElement_t
-        {
-            USB_EVENT,    ///< MIDI event type, first byte in USB MIDI packet.
-            USB_DATA1,    ///< First byte of data in USB MIDI packet.
-            USB_DATA2,    ///< Second byte of data in USB MIDI packet.
-            USB_DATA3     ///< Third byte of data in USB MIDI packet.
-        };
-
-        class HWA
-        {
-            public:
-            virtual bool init()                         = 0;
-            virtual bool deInit()                       = 0;
-            virtual bool write(usbMIDIPacket_t& packet) = 0;
-            virtual bool read(usbMIDIPacket_t& packet)  = 0;
-        };
-
-        USBMIDI(HWA& hwa, uint8_t cin = 0)
+        Usb(Hwa& hwa, uint8_t cin = 0)
             : Base(_transport)
             , _transport(*this, cin)
             , _hwa(hwa)
         {}
 
         private:
-        class Transport : public Base::Transport
+        class Transport : public lib::midi::Transport
         {
             public:
-            Transport(USBMIDI& usbMIDI, uint8_t cin)
-                : _usbMIDI(usbMIDI)
+            Transport(Usb& usb, uint8_t cin)
+                : _usb(usb)
                 , CIN(cin)
             {}
 
@@ -72,12 +52,6 @@ namespace MIDIlib
             bool read(uint8_t& data) override;
 
             private:
-            /// Used to construct a USB MIDI header from a given MIDI event and a virtual MIDI cable index.
-            static constexpr uint8_t usbMIDIHeader(uint8_t virtualcable, uint8_t event)
-            {
-                return ((virtualcable << 4) | (event >> 4));
-            }
-
             /// Enumeration holding USB-specific events for SysEx/System Common messages.
             enum class systemEvent_t : uint8_t
             {
@@ -91,15 +65,21 @@ namespace MIDIlib
                 SYS_EX_STOP3BYTE = 0x70
             };
 
-            USBMIDI&        _usbMIDI;
-            const uint8_t   CIN;
-            uint8_t         _rxIndex     = 0;
-            uint8_t         _rxBuffer[3] = {};
-            usbMIDIPacket_t _txBuffer    = {};
-            uint8_t         _txIndex     = 0;
-            messageType_t   _activeType  = messageType_t::INVALID;
+            Usb&          _usb;
+            const uint8_t CIN;
+            uint8_t       _rxIndex     = 0;
+            uint8_t       _rxBuffer[3] = {};
+            Packet        _txBuffer    = {};
+            uint8_t       _txIndex     = 0;
+            messageType_t _activeType  = messageType_t::INVALID;
+
+            /// Used to construct a USB MIDI header from a given MIDI event and a virtual MIDI cable index.
+            static constexpr uint8_t usbMIDIHeader(uint8_t virtualcable, uint8_t event)
+            {
+                return ((virtualcable << 4) | (event >> 4));
+            }
         } _transport;
 
-        HWA& _hwa;
+        Hwa& _hwa;
     };
-}    // namespace MIDIlib
+}    // namespace lib::midi::usb

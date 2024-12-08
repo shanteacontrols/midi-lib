@@ -1,40 +1,40 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(MIDI)
+project(libmidi)
 
 include(CTest)
 
-add_library(midi-lib STATIC)
+add_library(libmidi STATIC)
 
-target_sources(midi-lib
+target_sources(libmidi
     PRIVATE
-    src/MIDI.cpp
-    src/transport/BLE.cpp
-    src/transport/Serial.cpp
-    src/transport/USB.cpp
+    src/midi.cpp
+    src/transport/ble.cpp
+    src/transport/serial.cpp
+    src/transport/usb.cpp
 )
 
-target_include_directories(midi-lib
+target_include_directories(libmidi
     PUBLIC
     include
 )
 
-add_custom_target(midi-format
+add_custom_target(libmidi-format
     COMMAND echo Checking code formatting...
     COMMAND ${CMAKE_CURRENT_LIST_DIR}/scripts/code_format.sh
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
 )
 
-set_target_properties(midi-format PROPERTIES EXCLUDE_FROM_ALL TRUE)
+set_target_properties(libmidi-format PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 if (CMAKE_EXPORT_COMPILE_COMMANDS STREQUAL ON)
-    add_custom_target(midi-lint
+    add_custom_target(libmidi-lint
         COMMAND ${CMAKE_CURRENT_LIST_DIR}/scripts/clang_tidy_wrapper.sh --output=${CMAKE_CURRENT_BINARY_DIR}/clang-tidy-fixes.yml
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
 
-    set_target_properties(midi-lint PROPERTIES EXCLUDE_FROM_ALL TRUE)
-    add_dependencies(midi-lint midi-lib)
+    set_target_properties(libmidi-lint PROPERTIES EXCLUDE_FROM_ALL TRUE)
+    add_dependencies(libmidi-lint libmidi)
 endif()
 
 if (BUILD_TESTING_MIDI STREQUAL ON)

@@ -8,7 +8,7 @@
             "name": "Test",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/tests/src/test/midi-test",
+            "program": "${workspaceFolder}/build/tests/src/test/libmidi-test",
             "args": [],
             "stopAtEntry": true,
             "environment": [],

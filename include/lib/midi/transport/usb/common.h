@@ -19,39 +19,32 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "MIDI/transport/Serial.h"
+#pragma once
 
-using namespace MIDIlib;
+#include <array>
+#include <inttypes.h>
 
-bool SerialMIDI::Transport::init()
+namespace lib::midi::usb
 {
-    _serialMIDI.useRecursiveParsing(true);
-    return _serialMIDI._hwa.init();
-}
+    struct Packet
+    {
+        std::array<uint8_t, 4> data = {};
 
-bool SerialMIDI::Transport::deInit()
-{
-    return _serialMIDI._hwa.deInit();
-}
+        enum packetElement_t
+        {
+            USB_EVENT,    ///< MIDI event type, first byte in USB MIDI packet.
+            USB_DATA1,    ///< First byte of data in USB MIDI packet.
+            USB_DATA2,    ///< Second byte of data in USB MIDI packet.
+            USB_DATA3     ///< Third byte of data in USB MIDI packet.
+        };
+    };
 
-bool SerialMIDI::Transport::beginTransmission(messageType_t type)
-{
-    // nothing to do
-    return true;
-}
-
-bool SerialMIDI::Transport::write(uint8_t data)
-{
-    return _serialMIDI._hwa.write(data);
-}
-
-bool SerialMIDI::Transport::endTransmission()
-{
-    // nothing to do
-    return true;
-}
-
-bool SerialMIDI::Transport::read(uint8_t& data)
-{
-    return _serialMIDI._hwa.read(data);
-}
+    class Hwa
+    {
+        public:
+        virtual bool init()                = 0;
+        virtual bool deInit()              = 0;
+        virtual bool write(Packet& packet) = 0;
+        virtual bool read(Packet& packet)  = 0;
+    };
+}    // namespace lib::midi::usb

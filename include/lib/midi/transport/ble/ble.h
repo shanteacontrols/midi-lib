@@ -21,45 +21,26 @@
 
 #pragma once
 
-#include "MIDI/MIDI.h"
+#include "common.h"
+#include "lib/midi/midi.h"
 
-#ifndef MIDI_BLE_MAX_PACKET_SIZE
-#define MIDI_BLE_MAX_PACKET_SIZE 64
-#endif
-
-namespace MIDIlib
+namespace lib::midi::ble
 {
-    class BLEMIDI : public Base
+    class Ble : public Base
     {
         public:
-        struct bleMIDIPacket_t
-        {
-            std::array<uint8_t, MIDI_BLE_MAX_PACKET_SIZE> data = {};
-            size_t                                        size = 0;
-        };
-
-        class HWA
-        {
-            public:
-            virtual bool     init()                         = 0;
-            virtual bool     deInit()                       = 0;
-            virtual bool     write(bleMIDIPacket_t& packet) = 0;
-            virtual bool     read(bleMIDIPacket_t& packet)  = 0;
-            virtual uint32_t time()                         = 0;
-        };
-
-        BLEMIDI(HWA& hwa)
+        Ble(Hwa& hwa)
             : Base(_transport)
             , _transport(*this)
             , _hwa(hwa)
         {}
 
         private:
-        class Transport : public Base::Transport
+        class Transport : public lib::midi::Transport
         {
             public:
-            Transport(BLEMIDI& bleMIDI)
-                : _bleMIDI(bleMIDI)
+            Transport(Ble& ble)
+                : _ble(ble)
             {}
 
             bool init() override;
@@ -70,14 +51,14 @@ namespace MIDIlib
             bool read(uint8_t& data) override;
 
             private:
-            BLEMIDI&                                      _bleMIDI;
-            bleMIDIPacket_t                               _txBuffer      = {};
+            Ble&                                          _ble;
+            Packet                                        _txBuffer      = {};
             size_t                                        _rxIndex       = 0;
             size_t                                        _retrieveIndex = 0;
             std::array<uint8_t, MIDI_BLE_MAX_PACKET_SIZE> _rxBuffer      = {};
             uint8_t                                       _lowTimestamp  = 0;
         } _transport;
 
-        BLEMIDI::HWA& _hwa;
+        Hwa& _hwa;
     };
-}    // namespace MIDIlib
+}    // namespace lib::midi::ble

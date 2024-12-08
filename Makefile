@@ -20,16 +20,16 @@ all: cmake_config
 	@cmake --build $(LIB_BUILD_DIR)
 
 lib: cmake_config
-	@cmake --build $(LIB_BUILD_DIR) --target midi-lib
+	@cmake --build $(LIB_BUILD_DIR) --target libmidi
 
 test: cmake_config
 	@cmake --build $(LIB_BUILD_DIR) --target test
 
 format: cmake_config
-	@cmake --build $(LIB_BUILD_DIR) --target midi-format
+	@cmake --build $(LIB_BUILD_DIR) --target libmidi-format
 
 lint: cmake_config
-	@cmake --build $(LIB_BUILD_DIR) --target midi-lint
+	@cmake --build $(LIB_BUILD_DIR) --target libmidi-lint
 
 clean:
 	@echo Cleaning up.

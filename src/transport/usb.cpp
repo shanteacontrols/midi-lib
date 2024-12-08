@@ -19,46 +19,46 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "MIDI/transport/USB.h"
+#include "lib/midi/transport/usb/usb.h"
 
-using namespace MIDIlib;
+using namespace lib::midi::usb;
 
-bool USBMIDI::Transport::init()
+bool Usb::Transport::init()
 {
     _txIndex = 0;
     _rxIndex = 0;
-    _usbMIDI.useRecursiveParsing(true);
+    _usb.useRecursiveParsing(true);
 
-    return _usbMIDI._hwa.init();
+    return _usb._hwa.init();
 }
 
-bool USBMIDI::Transport::deInit()
+bool Usb::Transport::deInit()
 {
-    return _usbMIDI._hwa.deInit();
+    return _usb._hwa.deInit();
 }
 
-bool USBMIDI::Transport::beginTransmission(messageType_t type)
+bool Usb::Transport::beginTransmission(messageType_t type)
 {
-    _activeType          = type;
-    _txBuffer[USB_EVENT] = usbMIDIHeader(CIN, static_cast<uint8_t>(type));
-    _txIndex             = 0;
+    _activeType                       = type;
+    _txBuffer.data[Packet::USB_EVENT] = usbMIDIHeader(CIN, static_cast<uint8_t>(type));
+    _txIndex                          = 0;
 
     return true;
 }
 
-bool USBMIDI::Transport::write(uint8_t data)
+bool Usb::Transport::write(uint8_t data)
 {
     bool returnValue = true;
 
     if (_activeType != messageType_t::SYS_EX)
     {
-        _txBuffer[_txIndex + 1] = data;
+        _txBuffer.data[_txIndex + 1] = data;
     }
     else if (data == 0xF0)
     {
         // start of sysex
-        _txBuffer[USB_EVENT] = usbMIDIHeader(CIN, static_cast<uint8_t>(systemEvent_t::SYS_EX_START));
-        _txBuffer[USB_DATA1] = data;
+        _txBuffer.data[Packet::USB_EVENT] = usbMIDIHeader(CIN, static_cast<uint8_t>(systemEvent_t::SYS_EX_START));
+        _txBuffer.data[Packet::USB_DATA1] = data;
     }
     else
     {
@@ -70,29 +70,29 @@ bool USBMIDI::Transport::write(uint8_t data)
             // this event has sysExStop1byte as event index with added count of how many bytes there are in USB packet.
             // Add 0x10 since event is shifted 4 bytes to the left.
 
-            _txBuffer[USB_EVENT] = usbMIDIHeader(CIN, (static_cast<uint8_t>(systemEvent_t::SYS_EX_STOP1BYTE) + (0x10 * i)));
+            _txBuffer.data[Packet::USB_EVENT] = usbMIDIHeader(CIN, (static_cast<uint8_t>(systemEvent_t::SYS_EX_STOP1BYTE) + (0x10 * i)));
         }
 
         switch (i)
         {
         case 0:
         {
-            _txBuffer[USB_DATA1] = data;
-            _txBuffer[USB_DATA2] = 0;
-            _txBuffer[USB_DATA3] = 0;
+            _txBuffer.data[Packet::USB_DATA1] = data;
+            _txBuffer.data[Packet::USB_DATA2] = 0;
+            _txBuffer.data[Packet::USB_DATA3] = 0;
         }
         break;
 
         case 1:
         {
-            _txBuffer[USB_DATA2] = data;
-            _txBuffer[USB_DATA3] = 0;
+            _txBuffer.data[Packet::USB_DATA2] = data;
+            _txBuffer.data[Packet::USB_DATA3] = 0;
         }
         break;
 
         case 2:
         {
-            _txBuffer[USB_DATA3] = data;
+            _txBuffer.data[Packet::USB_DATA3] = data;
 
             if (data != 0xF7)
             {
@@ -111,18 +111,18 @@ bool USBMIDI::Transport::write(uint8_t data)
     return returnValue;
 }
 
-bool USBMIDI::Transport::endTransmission()
+bool Usb::Transport::endTransmission()
 {
-    return _usbMIDI._hwa.write(_txBuffer);
+    return _usb._hwa.write(_txBuffer);
 }
 
-bool USBMIDI::Transport::read(uint8_t& data)
+bool Usb::Transport::read(uint8_t& data)
 {
     if (!_rxIndex)
     {
-        USBMIDI::usbMIDIPacket_t packet;
+        Packet packet = {};
 
-        if (!_usbMIDI._hwa.read(packet))
+        if (!_usb._hwa.read(packet))
         {
             return false;
         }
@@ -130,7 +130,7 @@ bool USBMIDI::Transport::read(uint8_t& data)
         // We already have entire message here.
         // MIDIEvent.Event is CIN, see midi10.pdf.
         // Shift CIN four bytes left to get messageType_t.
-        uint8_t midiMessage = packet[USB_EVENT] << 4;
+        uint8_t midiMessage = packet.data[Packet::USB_EVENT] << 4;
 
         switch (midiMessage)
         {
@@ -138,7 +138,7 @@ bool USBMIDI::Transport::read(uint8_t& data)
         case static_cast<uint8_t>(systemEvent_t::SYS_COMMON1BYTE):
         case static_cast<uint8_t>(systemEvent_t::SINGLE_BYTE):
         {
-            _rxBuffer[_rxIndex++] = packet[USB_DATA1];
+            _rxBuffer[_rxIndex++] = packet.data[Packet::USB_DATA1];
         }
         break;
 
@@ -150,8 +150,8 @@ bool USBMIDI::Transport::read(uint8_t& data)
         case static_cast<uint8_t>(messageType_t::SYS_COMMON_SONG_SELECT):
         case static_cast<uint8_t>(systemEvent_t::SYS_EX_STOP2BYTE):
         {
-            _rxBuffer[_rxIndex++] = packet[USB_DATA2];
-            _rxBuffer[_rxIndex++] = packet[USB_DATA1];
+            _rxBuffer[_rxIndex++] = packet.data[Packet::USB_DATA2];
+            _rxBuffer[_rxIndex++] = packet.data[Packet::USB_DATA1];
         }
         break;
 
@@ -165,9 +165,9 @@ bool USBMIDI::Transport::read(uint8_t& data)
         case static_cast<uint8_t>(systemEvent_t::SYS_EX_START):
         case static_cast<uint8_t>(systemEvent_t::SYS_EX_STOP3BYTE):
         {
-            _rxBuffer[_rxIndex++] = packet[USB_DATA3];
-            _rxBuffer[_rxIndex++] = packet[USB_DATA2];
-            _rxBuffer[_rxIndex++] = packet[USB_DATA1];
+            _rxBuffer[_rxIndex++] = packet.data[Packet::USB_DATA3];
+            _rxBuffer[_rxIndex++] = packet.data[Packet::USB_DATA2];
+            _rxBuffer[_rxIndex++] = packet.data[Packet::USB_DATA1];
         }
         break;
 
